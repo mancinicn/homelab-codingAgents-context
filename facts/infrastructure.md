@@ -14,8 +14,20 @@
 - Traefik v3.2.0: TLS via Cloudflare DNS challenge
 - Vaultwarden v1.32.7: vault.christianmancini.de
 - Authentik 2024.8.3: auth.christianmancini.de
-- n8n: tailnet-only on VPS (moving to NAS in Phase 4)
-- Restic backup: NAS → B2, daily timer, verified
+- n8n 2.29.8: on NAS, tailnet-only (http://100.126.31.47:5678), own
+  Postgres 16-alpine. VPS n8n (n8n-zuij) still running — not yet retired.
+- Home Assistant 2026.7.1: on NAS, host network
+  (http://100.126.31.47:8123 + LAN), native auth, config at
+  /volume1/appdata/homeassistant
+- Restic backup: NAS → B2, daily timer, verified (does NOT yet cover
+  /volume1/appdata — that's Phase 5)
+
+## NAS Docker
+- data-root: /volume1/docker (moved off UGOS's overlay-on-overlay root fs)
+- storage driver: overlay2 (containerd snapshotter explicitly disabled —
+  see ADR-008, breaks image extraction on this box otherwise)
+- /etc/docker/daemon.json:
+  {"data-root": "/volume1/docker", "features": {"containerd-snapshotter": false}}
 
 ## Auth
 - Authentik groups: authentik Admins (superuser), users, agents
