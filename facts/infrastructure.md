@@ -9,6 +9,14 @@
 ## Domain
 - christianmancini.de via Cloudflare
 - Zone ID: 3df7fbeaa5151f36efef5c350629679f
+- DNS API token: CLOUDFLARE_DNS_API_TOKEN in /etc/vps-secrets/traefik.env
+  on the VPS (scoped to DNS read/write only). File is 644 (world-readable
+  by design — Docker's env_file needs it), readable without sudo
+- Stale records `pretix` (was a CNAME to a Cloudflare Tunnel,
+  *.cfargotunnel.com — no cloudflared container running anywhere seen
+  this session, origin presumed dead) and `chat` (plain A record to the
+  VPS, but proxied/orange-cloud, NOT DNS-only as originally assumed)
+  were deleted 2026-07-10
 
 ## Services
 - Traefik v3.2.0: TLS via Cloudflare DNS challenge
