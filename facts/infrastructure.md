@@ -17,8 +17,11 @@
 - n8n 2.29.8: on NAS, tailnet-only (http://100.126.31.47:5678), own
   Postgres 16-alpine. VPS n8n (n8n-zuij) still running — not yet retired.
   Also gated by an Authentik outpost at http://100.126.31.47:5679 (see
-  below) — 5678 itself is still directly reachable, not yet locked down
-  to admin-only (pending Tailscale ACL work)
+  below). SMTP via Brevo (smtp-relay.brevo.com:587, separate SMTP key
+  from Authentik's, sender mancinicn@gmail.com) — verified working
+  2026-07-10. Tailscale ACL now scopes group:family to ports 8123/5679
+  only on the NAS, so 5678 is effectively admin-only via the tailnet
+  (still technically bound and reachable by Christian's own devices)
 - Home Assistant 2026.7.1: on NAS, host network
   (http://100.126.31.47:8123 + LAN), native auth, config at
   /volume1/appdata/homeassistant
