@@ -16,9 +16,32 @@
 - Authentik 2024.8.3: auth.christianmancini.de
 - n8n 2.29.8: on NAS, tailnet-only (http://100.126.31.47:5678), own
   Postgres 16-alpine. VPS n8n (n8n-zuij) still running — not yet retired.
+  Also gated by an Authentik outpost at http://100.126.31.47:5679 (see
+  below) — 5678 itself is still directly reachable, not yet locked down
+  to admin-only (pending Tailscale ACL work)
 - Home Assistant 2026.7.1: on NAS, host network
   (http://100.126.31.47:8123 + LAN), native auth, config at
   /volume1/appdata/homeassistant
+
+## Authentik outpost (n8n family gate)
+- Outpost object: `n8n-outpost-standalone` (pk 58496339-3660-4e26-8c2d-4d7fc7ee358d)
+  — a manually-created, unmanaged outpost. NOT the built-in "authentik
+  Embedded Outpost" (pk 3df9e0dc-...) — that one was used by mistake
+  initially (see decisions/009), its provider binding has been removed,
+  leave it alone going forward.
+- Provider: `n8n-family` (Proxy mode, internal host http://n8n:5678,
+  external host http://100.126.31.47:5679)
+- Application: `n8n (Family)` (slug n8n-family), policy_engine_mode
+  "any", bound to groups `family` and `authentik Admins`
+- Outpost containers on NAS: `n8n-outpost` + `n8n-outpost-redis`
+  (compose: nas/automation/n8n/outpost-compose.yml). The outpost needs
+  its own Redis for session storage — do NOT point it at the VPS's
+  authentik-redis (internal-only to VPS's docker network by design)
+- Token: /etc/nas-secrets/authentik-outpost.env on NAS (never in git,
+  never in chat — see nas/scripts/save-authentik-outpost-token.sh)
+- Groups: `family` group exists but has no real members yet (only a
+  test account). Wife's real Authentik account (birteloeckel@gmail.com)
+  was never actually created — still to do.
 - Restic backup: NAS → B2, daily timer, verified (does NOT yet cover
   /volume1/appdata — that's Phase 5)
 
@@ -30,10 +53,15 @@
   {"data-root": "/volume1/docker", "features": {"containerd-snapshotter": false}}
 
 ## Auth
-- Authentik groups: authentik Admins (superuser), users, agents
+- Authentik groups: authentik Admins (superuser, 2 members: admin,
+  akadmin), authentik Read-only (unused), users, agents, family (new,
+  see outpost section below)
 - MFA: TOTP on admin account
 - SMTP: Brevo (FROM mancinicn@gmail.com)
-- akadmin: disabled
+- akadmin: DISCREPANCY — documented as disabled, but confirmed via API
+  2026-07-10 as `is_active: true` with a real login on 2026-07-07. Not
+  yet resolved; decide whether to actually disable it or investigate
+  the July 7 login
 
 ## Agent access
 - agent_ops on NAS: SSH key, narrow sudoers (safe docker ops only)
@@ -47,3 +75,16 @@
 ## Backup
 - restic → Backblaze B2, append-only gateway NOT YET (Phase 5)
 - Telegram notification on failure (tested)
+
+## Operational gotcha — env_file changes need recreate, not restart
+`docker restart <container>` does NOT re-read `env_file` from disk — it
+restarts the existing process with whatever environment was baked in at
+container CREATION time. Updating a secrets file and then running
+`docker restart` silently keeps using the OLD value; there is no error,
+it just doesn't take effect. To pick up an env_file change, run
+`docker compose -f <file> up -d` again (recreates the container) —
+this is what nas/scripts/deploy-outpost.sh and deploy-phase4.sh do.
+Cost ~45 minutes of debugging on 2026-07-10 (see decisions/009)
+because a token rotation kept appearing to fail when the container
+was simply never seeing the new value. Applies to any service here
+using env_file for secrets (n8n, HA if ever needed, the outpost).
