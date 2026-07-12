@@ -78,13 +78,18 @@
 - agent_ops on NAS: SSH key, narrow sudoers (safe docker ops only)
 - docker run/rm/prune BLOCKED until Phase 5 (append-only backup) — DONE
 - Secrets in /etc/vps-secrets/ and /etc/nas-secrets/ (never in git)
-- Ops gateway (Phase 6+7, ADR-011/012): http://100.126.31.47:8300,
+- Ops gateway (Phase 6+7, ADR-011/012/013): http://100.126.31.47:8300,
   NAS-only, tailnet-only. Read: service_status, get_logs, disk_usage,
   backup_health. Write (Phase 7 v1): restart_service (docker-socket-
   proxy ALLOW_RESTARTS flag, narrow), pull_image (IMAGES+POST, pulls
   the exact pinned tag from SERVICE_IMAGES in app/main.py, never
-  :latest). deploy_from_repo and the Telegram approval flow explicitly
-  deferred — see ADR-012. Bearer token auth (svc-claude, svc-hermes),
+  :latest). Telegram approval flow (request_approval, approval_status)
+  built ahead of Phase 8 per Christian's choice — reuses the existing
+  backup-failure notification bot (/etc/nas-secrets/notify.env), 10min
+  expiry, verified end-to-end twice including a message-editing fix so
+  the outcome shows visibly in Telegram, not just in the API. Nothing
+  destructive uses it yet — deploy_from_repo still deferred, see
+  ADR-012. Bearer token auth (svc-claude, svc-hermes),
   every call audited. Claude holds a standing svc-claude token (a
   deliberate extension beyond ADR-006's borrowed-session model, made
   explicitly — see session 6 / decisions), stored locally on the
