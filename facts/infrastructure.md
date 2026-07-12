@@ -78,24 +78,49 @@
 - agent_ops on NAS: SSH key, narrow sudoers (safe docker ops only)
 - docker run/rm/prune BLOCKED until Phase 5 (append-only backup) — DONE
 - Secrets in /etc/vps-secrets/ and /etc/nas-secrets/ (never in git)
-- Ops gateway (Phase 6+7, ADR-011/012/013): http://100.126.31.47:8300,
+- Ops gateway (Phase 6+7+8, ADR-011/012/013/014): http://100.126.31.47:8300,
   NAS-only, tailnet-only. Read: service_status, get_logs, disk_usage,
-  backup_health. Write (Phase 7 v1): restart_service (docker-socket-
-  proxy ALLOW_RESTARTS flag, narrow), pull_image (IMAGES+POST, pulls
-  the exact pinned tag from SERVICE_IMAGES in app/main.py, never
-  :latest). Telegram approval flow (request_approval, approval_status)
+  backup_health, list_removable_containers, list_removable_volumes.
+  Write (Phase 7 v1): restart_service (docker-socket-proxy
+  ALLOW_RESTARTS flag, narrow), pull_image (IMAGES+POST, pulls the
+  exact pinned tag from SERVICE_IMAGES in app/main.py, never :latest).
+  Destructive, approval-gated (Phase 8): remove_container,
+  remove_volume (cleanup-only — stopped containers / dangling volumes
+  only, never the named core services), prune (bundled
+  containers+volumes+dangling-images, requires filters={"all":"true"}
+  on volumes/prune or named volumes survive it — real bug found and
+  fixed during testing), reboot (file-trigger to a host-side systemd
+  path unit — nas/scripts/ops-gateway-reboot.path/.service — Docker's
+  API has no reboot endpoint at all, so this is the one capability
+  outside Docker entirely, and it's exactly one file-create, no SSH
+  key). Telegram approval flow (request_approval, approval_status)
   built ahead of Phase 8 per Christian's choice — reuses the existing
   backup-failure notification bot (/etc/nas-secrets/notify.env), 10min
   expiry, verified end-to-end twice including a message-editing fix so
-  the outcome shows visibly in Telegram, not just in the API. Nothing
-  destructive uses it yet — deploy_from_repo still deferred, see
-  ADR-012. Bearer token auth (svc-claude, svc-hermes),
-  every call audited. Claude holds a standing svc-claude token (a
-  deliberate extension beyond ADR-006's borrowed-session model, made
-  explicitly — see session 6 / decisions), stored locally on the
-  laptop only (C:\Users\jm2_c\.ops-gateway-token, outside both git
-  clones), never in git or chat. svc-hermes token generated and in
-  Vaultwarden, unused until Hermes exists (Phase 10)
+  the outcome shows visibly in Telegram, not just in the API. Now
+  proven against real destructive actions (Phase 8), not just a
+  synthetic request. deploy_from_repo still deferred, see ADR-012.
+  Bearer token auth (svc-claude, svc-hermes), every call audited.
+  Claude holds a standing svc-claude token (a deliberate extension
+  beyond ADR-006's borrowed-session model, made explicitly — see
+  session 6 / decisions), stored locally on the laptop only
+  (C:\Users\jm2_c\.ops-gateway-token, outside both git clones), never
+  in git or chat. svc-hermes token generated and in Vaultwarden,
+  unused until Hermes exists (Phase 10)
+- **Open finding (2026-07-12, ADR-014)**: this NAS's Docker state does
+  not reliably survive a host reboot — the real Phase 8 reboot test
+  corrupted ownership/permissions on two unrelated pieces of
+  per-container state (a redis anonymous volume, an outpost
+  container's auto-generated resolv.conf), both silently, both fixed
+  by recreating the affected containers. Root cause not identified —
+  investigate before relying on `reboot` unattended (e.g. via Hermes,
+  Phase 10)
+- **Open finding (2026-07-12, unrelated to the above, VPS-side)**:
+  Authentik's outpost config-fetch API (/api/v3/outposts/instances/)
+  returns a consistent 504 Gateway Timeout even though
+  authentik-server's own container healthcheck is green. Discovered
+  only once the NAS-side DNS fix let the outpost actually reach the
+  VPS — likely pre-existing, parked for separate investigation
 
 ## LLM access
 - Interactive: Claude Code + OpenAI Codex (subscriptions)

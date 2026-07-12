@@ -1,6 +1,6 @@
 # Claude Code Handover — Homelab Infrastructure Build
 
-Snapshot as of 2026-07-12, end of session 8. This is a point-in-time
+Snapshot as of 2026-07-12, end of session 9. This is a point-in-time
 summary for starting a new chat — it will go stale. For anything that
 matters, verify against the live repos/state rather than trusting this
 document blindly (same rule as everywhere else in this project).
@@ -97,7 +97,7 @@ not something that happens silently.
 | n8n-outpost + redis | goauthentik/proxy:2024.8.3 | gates n8n via Authentik, family group |
 | ops-gateway + docker-socket-proxy | custom / tecnativa v0.4.2 | tailnet 100.126.31.47:8300 |
 
-## Ops gateway (Phase 6/7) — what Claude can actually do right now
+## Ops gateway (Phase 6/7/8) — what Claude can actually do right now
 
 `http://100.126.31.47:8300`, NAS-only, tailnet-only, bearer token auth
 (`svc-claude`/`svc-hermes`), every call audited to `/data/audit.log`
@@ -105,17 +105,37 @@ inside the container.
 
 **Read** (Phase 6): `service_status/{name}`, `get_logs/{name}`,
 `disk_usage`, `backup_health`. Fixed enum of service names — no
-free-form input reaches Docker.
+free-form input reaches Docker. Plus (Phase 8) `list_removable_containers`,
+`list_removable_volumes` — dynamic discovery, not fixed-enum.
 
 **Write** (Phase 7 v1): `restart_service/{name}` (docker-socket-proxy's
 `ALLOW_RESTARTS` flag, narrow), `pull_image/{name}` (pulls the exact
 pinned tag from `SERVICE_IMAGES` in `app/main.py`, never `:latest`).
 
-**Approval** (built ahead of schedule, ADR-013): `request_approval`
-sends a Telegram message (reuses the existing backup-alert bot) with
-Approve/Deny buttons, echoes the exact action, 10-minute expiry.
-`approval_status/{id}` polls the outcome. Verified end-to-end twice.
-**Nothing destructive uses this yet** — Phase 8 doesn't exist yet.
+**Approval** (ADR-013): `request_approval` sends a Telegram message
+(reuses the existing backup-alert bot) with Approve/Deny buttons,
+echoes the exact action, 10-minute expiry. `approval_status/{id}`
+polls the outcome.
+
+**Destructive, approval-gated** (Phase 8, ADR-014): `remove_container`,
+`remove_volume` (cleanup-only — dynamically discovered stopped
+containers / dangling volumes, never the named core services),
+`prune` (bundled containers+volumes+dangling-images — `volumes/prune`
+needs `filters={"all":"true"}` or named volumes survive it, a real bug
+found and fixed during testing), `reboot` (file-trigger to a host-side
+systemd path unit, `nas/scripts/ops-gateway-reboot.path`/`.service` —
+Docker's API has no reboot endpoint, so this is the one capability
+outside Docker entirely, and it's exactly one file-create, no SSH key
+or privileged container). All four verified with real resources and
+real Telegram approvals, including a genuine NAS reboot.
+
+**Real finding from the reboot test**: this NAS's Docker state doesn't
+reliably survive a host reboot. Two unrelated pieces of per-container
+state (a redis anonymous volume, an outpost container's
+auto-generated `resolv.conf`) came back with corrupted
+ownership/permissions after boot, both silently, both fixed by
+recreating the affected containers. Root cause not identified — see
+ADR-014. Don't rely on `reboot` unattended until this is understood.
 
 **Claude's token** lives at `C:\Users\jm2_c\.ops-gateway-token` on the
 laptop only — outside both git clones, never committed, never pasted
@@ -170,14 +190,18 @@ identity) → 3.5 (agent access model) → 4 (n8n on NAS, workflow
 import/VPS-retirement deliberately deferred) → 4.5 (Home Assistant) →
 5 (append-only backup gateway, full coverage) → 6 (ops gateway,
 read-only) → 7 v1 (restart_service, pull_image) → Telegram approval
-flow (built ahead of schedule).
+flow (built ahead of schedule) → 8 (destructive actions: remove_container,
+remove_volume, prune, reboot — verified end-to-end including a real
+NAS reboot).
 
 ## Remaining phases
 
 - **Phase 7 remainder**: `deploy_from_repo` design (see above)
-- **Phase 8**: destructive actions (`remove_volume`, `remove_container`,
-  `prune`, `reboot`) — approval mechanism now exists and is proven,
-  this is the next real milestone
+- **Phase 8 follow-ups** (not blocking, but real): investigate why this
+  NAS's Docker state doesn't reliably survive a host reboot (see
+  "Ops gateway" section above and ADR-014); investigate a separate,
+  apparently pre-existing Authentik outpost API 504 on the VPS
+  (see Known issues below)
 - **Phase 9**: Immich + vault permissions
 - **Phase 10**: agentic layer (Hermes goes live)
 
@@ -193,6 +217,20 @@ Notable ones beyond what's already covered above:
 
 ## Known issues / open loose ends
 
+- **This NAS's Docker state doesn't reliably survive a host reboot**
+  (found 2026-07-12, ADR-014): a real reboot test corrupted ownership/
+  permissions on a redis anonymous volume and an outpost container's
+  auto-generated resolv.conf, both silently, both fixed by recreating
+  the affected containers. Root cause not identified — candidates
+  include btrfs/mount timing on /volume1 during boot. Don't rely on
+  `reboot` unattended (e.g. Hermes, Phase 10) until understood
+- **Authentik outpost config-fetch API returns 504** (found 2026-07-12,
+  VPS-side, unrelated to the above): `authentik-server`'s own container
+  healthcheck is green, but `/api/v3/outposts/instances/` times out.
+  Discovered only once the NAS-side fix above let the outpost reach
+  the VPS again — likely pre-existing, not caused by this session.
+  Family n8n gate (port 5679) is currently degraded because of this —
+  Christian's own direct access (port 5678) is unaffected
 - `akadmin` shows `is_active: true` with a real 2026-07-07 login,
   contradicting the documented "disabled" state — never investigated
 - Wife's real Authentik account still not created (`family` group has
