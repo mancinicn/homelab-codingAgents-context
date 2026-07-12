@@ -238,16 +238,22 @@ Notable ones beyond what's already covered above:
   match exactly. Deploy path unchanged: edit in the repo, scp to the
   same relative path under /opt/vps-infra/, docker compose up -d
 - `akadmin` shows `is_active: true` with a real 2026-07-07 login,
-  contradicting the documented "disabled" state — never investigated
+  contradicting the documented "disabled" state — never investigated.
+  Needs Authentik admin API access (temp token per ADR-009); Christian
+  chose (2026-07-12) to check this himself rather than hand over a
+  token this session
 - Wife's real Authentik account still not created (`family` group has
   a test account only); her Tailscale + n8n invites sent but
-  acceptance not confirmed
+  acceptance not confirmed. Identity/account creation stays
+  human-clicked deliberately (see above) — Christian's to do directly
 - Old full-delete-capability B2 key still exists in Backblaze, unused
-  now — decide whether to rotate/delete
+  now — **explicit decision (2026-07-12): keep it for now**, revisit
+  later. Not an oversight
 - Stray expired Authentik token (`authtokenOutpost`) — harmless, low
-  priority cleanup
+  priority cleanup, same access need as the akadmin item above
 - Mobile dashboard for viewing containers (Dozzle vs Portainer) —
-  discussed, parked, not decided
+  **explicit decision (2026-07-12): leave parked**, not a priority.
+  Not an oversight
 - UGOS's own native SSH service randomly disables itself — Tailscale
   SSH bypasses this, known pre-existing quirk, not investigated further
 
