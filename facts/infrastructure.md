@@ -84,7 +84,24 @@
 - Autonomous: DeepSeek API (cheap, OpenAI-compatible)
 
 ## Backup
-- restic → Backblaze B2, append-only gateway NOT YET (Phase 5)
+- restic → Backblaze B2, bucket ugreen-restic-62fdead3d97f, THROUGH the
+  append-only gateway (Phase 5 DONE, cutover completed 2026-07-12)
+- Append-only gateway (ADR-010): `backup-gateway` container on VPS,
+  tailnet-only (100.94.111.98:8200), rclone/rclone:1.74.4 running
+  `serve restic --append-only`. NAS can add new backups, cannot delete
+  existing ones — enforced independently by both the B2 key's
+  capabilities and the gateway's own restic-protocol-aware logic
+- NAS config: /home/mancinicn/.config/restic/b2.env — RESTIC_REPOSITORY
+  now `rest:http://nas-backup:...@100.94.111.98:8200/`, no longer holds
+  any B2 credential directly. Pre-cutover version backed up alongside
+  it as `b2.env.pre-gateway-<timestamp>` (contains the OLD full-delete
+  B2 key — safe to delete once the new setup has run a few days)
+- Secrets: /etc/vps-secrets/backup-gateway.env (VPS, 600 root:root) —
+  RCLONE_CONFIG_B2GATEWAY_* (new restricted B2 key, no deleteFiles
+  capability) + GATEWAY_USER/GATEWAY_PASS (NAS's credential to the
+  gateway, unrelated to B2)
+- Pruning: still only ever from Christian's laptop, directly against
+  B2, using the original full-capability key (unchanged from ADR-005)
 - Telegram notification on failure (tested)
 
 ## Operational gotcha — env_file changes need recreate, not restart
