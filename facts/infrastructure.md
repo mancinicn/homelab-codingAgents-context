@@ -100,6 +100,19 @@
   RCLONE_CONFIG_B2GATEWAY_* (new restricted B2 key, no deleteFiles
   capability) + GATEWAY_USER/GATEWAY_PASS (NAS's credential to the
   gateway, unrelated to B2)
+- Backup jobs (both through the gateway, both tagged, both with
+  Telegram failure alerts via notify-backup-fail@.service):
+  - `restic-photos-backup.timer` — daily 03:15, runs as mancinicn,
+    tag "photos", /volume1/Photos
+  - `restic-appdata-backup.timer` — daily 04:00, runs as **root**
+    (n8n's data dir is uid 1000, HA's config dir has a different
+    owner too — mancinicn can't read either), tag "appdata": n8n's
+    data dir + a fresh `pg_dump` of n8n's Postgres (dumped to
+    /volume1/appdata/n8n/n8n-postgres-dump.sql, overwritten each run —
+    raw-copying a live Postgres data dir risks an inconsistent
+    snapshot) + Home Assistant's config dir. Verified 2026-07-12: real
+    Postgres data confirmed in the dump (301KB via `restic ls --long`,
+    not empty), correct paths/tags in the snapshot
 - Pruning: still only ever from Christian's laptop, directly against
   B2, using the original full-capability key (unchanged from ADR-005)
 - Telegram notification on failure (tested)
