@@ -108,6 +108,104 @@ below, not blocking Phase 8's completion, but worth investigating
 before `reboot` is used routinely or by an unattended agent (Hermes,
 Phase 10) without a human present to catch and fix fallout like this.
 
+### Update, same day: a THIRD instance, with delayed onset — bigger blast radius than first found
+Discovered hours later (~18:37, roughly 4.5 hours after the reboot)
+while starting the follow-up investigation into this very issue:
+`n8n` itself was crash-looping (`restart_count` climbing past 970,
+tight ~15-25s loop) on `getaddrinfo EAI_AGAIN n8n-postgres` — the same
+DNS-resolution symptom class as the `n8n-outpost` incident, but this
+time on the completely separate `core-net` network, and **silent for
+over four hours** before anyone noticed (n8n was simply down/flapping
+the whole time — Christian's own direct access on port 5678 was
+broken, not just the family gate). `n8n-postgres` itself was
+confirmed healthy and unaffected throughout — purely n8n's own
+DNS-resolution path that broke. Fixed the same way: `docker compose up
+-d --force-recreate n8n` (not `restart` — same reasoning as before).
+
+The delayed onset changes the theory: this isn't necessarily
+corruption that fails immediately and obviously (like `n8n-outpost`,
+which does frequent fresh DNS lookups and so failed right away).
+`n8n` most likely got the same broken `resolv.conf` at the reboot but
+had a cached/pooled connection to Postgres that only needed a *fresh*
+DNS lookup hours later when something (a connection cycle, a pool
+recycle) forced a reconnect — meaning containers that don't do
+frequent fresh container-name lookups could carry this same latent
+corruption **invisibly**, for an unknown period, with no symptom until
+something finally forces a fresh resolution.
+
+Given that risk, proactively recreated `n8n-postgres` and
+`homeassistant` too (2026-07-12, same evening) — neither had been
+recreated since the reboot (`started_at` still matched the original
+14:12 reboot time), so both were carrying unknown risk even though
+neither had shown any symptom. Both came back clean. All five NAS
+containers now confirmed on fresh post-reboot state.
+
+**Revised takeaway**: the practical mitigation for now, until root
+cause is found, is that *every* container should be recreated
+(not just restarted) after any reboot of this NAS — not just the ones
+that happen to show visible symptoms quickly. A silent, hours-delayed
+outage is arguably worse than an immediate, loud one, since nothing
+alerts on it.
+
+### Update, same day: likely root cause found
+Investigated the boot sequence directly. `docker.service`'s `After=`
+list (`network-online.target nss-lookup.target docker.socket
+firewalld.service containerd.service time-set.target`) has no
+dependency on `/volume1` at all — and `/volume1` isn't even a normal
+static systemd mount unit (`/etc/fstab` only lists `/tmp` and `/boot`;
+`volume1.mount` shows `Loaded: loaded (/proc/self/mountinfo)`, meaning
+systemd only discovers it after something else mounts it at runtime —
+a UGOS-proprietary LVM/device-mapper volume
+(`ug_B584AF_1766063350_pool1-volume1`), entirely outside systemd's
+normal dependency graph). So there's no reliable ordering guarantee
+between the storage becoming ready and Docker starting, at the
+service level.
+
+But the more direct, evidenced culprit: UGOS runs its own
+`index_serv` (file-indexing daemon powering the NAS web UI's
+search/browse features) that actively watches and processes **every
+file write across all of `/volume1`, including deep inside Docker's
+own internal `overlay2` storage** — directories that should be
+entirely private to Docker. Its logs show a genuine bug in its own
+ignore/exclusion logic:
+
+```
+WARN ... sharefolder.IsShareFolder(/volume1/appdata) got 0 with error:
+strconv.ParseUint: parsing "": invalid syntax
+```
+
+`index_serv` decides whether to skip indexing a path by looking it up
+as a registered UGOS "Shared Folder." `/volume1/docker` (and
+`/volume1/appdata`) were set up by hand-editing
+`/etc/docker/daemon.json` (ADR-008), never created through UGOS's own
+Shared Folder UI — so they have no entry in UGOS's shared-folder
+database, the type lookup returns empty, and the parse fails.
+**748 occurrences of this exact error since the reboot alone** (6+
+hours of uptime) — this is a continuously firing bug, not a one-off
+boot-time fluke, meaning the underlying race risk isn't strictly
+reboot-specific; a reboot's burst of simultaneous container writes
+just makes hitting the race far more likely than during quiet steady
+-state operation.
+
+**Theory**: this buggy, undefined "should I skip this path" check
+races unpredictably with Docker's own writes to files under
+`/volume1/docker` and `/volume1/appdata` — sometimes correctly
+skipping (confirmed in the same logs — e.g. a Postgres data file
+correctly marked "is skiped"), sometimes not, non-deterministically.
+This plausibly explains the pattern observed: different containers
+corrupted, different timing, no single deterministic trigger — all
+consistent with a race condition tied to write volume and timing
+rather than a fixed, always-reproducible bug.
+
+**Suggested fix, not yet tried**: register `/volume1/docker` and
+`/volume1/appdata` as proper UGOS Shared Folders via the NAS's own web
+UI (pointing at the existing directories rather than creating new
+ones, if UGOS supports that) — this should let `index_serv`'s
+share-folder lookup resolve correctly instead of erroring, removing
+the undefined behavior. Needs Christian to do via the UGOS web UI (no
+credential/access for this exists on the agent side) and then verify
+with another real reboot test before trusting `reboot` unattended.
+
 ## Consequences
 - All four actions verified with real resources, real Telegram
   approvals, and real before/after checks — not just backend logic:

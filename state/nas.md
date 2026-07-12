@@ -1,12 +1,12 @@
 ## NAS containers
 NAMES                      IMAGE                                            STATUS
-n8n-outpost                ghcr.io/goauthentik/proxy:2024.8.3               Up About an hour (healthy)
-n8n-outpost-redis          redis:7-alpine                                   Up About an hour
-ops-gateway                ops-gateway:1.4                                  Up 3 hours (healthy)
-ops-gateway-docker-proxy   tecnativa/docker-socket-proxy:v0.4.2             Up 3 hours
-n8n                        docker.n8n.io/n8nio/n8n:2.29.8                   Up 18 seconds
-n8n-postgres               postgres:16-alpine                               Up 3 hours (healthy)
-homeassistant              ghcr.io/home-assistant/home-assistant:2026.7.1   Up 3 hours
+homeassistant              ghcr.io/home-assistant/home-assistant:2026.7.1   Up 6 minutes
+n8n-postgres               postgres:16-alpine                               Up 6 minutes (healthy)
+n8n                        docker.n8n.io/n8nio/n8n:2.29.8                   Up 8 minutes
+n8n-outpost                ghcr.io/goauthentik/proxy:2024.8.3               Up 5 hours (healthy)
+n8n-outpost-redis          redis:7-alpine                                   Up 5 hours
+ops-gateway                ops-gateway:1.4                                  Up 7 hours (healthy)
+ops-gateway-docker-proxy   tecnativa/docker-socket-proxy:v0.4.2             Up 7 hours
 
 ## NAS disk
 Filesystem                                      Size  Used Avail Use% Mounted on
@@ -25,6 +25,6 @@ afbc1ea27eed   ops-gateway_ops-gateway-internal   bridge    local
 ## Backup timer
 ● restic-photos-backup.timer - Daily Restic photo backup
      Loaded: loaded (/etc/systemd/system/restic-photos-backup.timer; enabled; preset: enabled)
-     Active: active (waiting) since Sun 2026-07-12 14:11:12 CEST; 2h 49min ago
-    Trigger: Mon 2026-07-13 03:29:16 CEST; 10h left
+     Active: active (waiting) since Sun 2026-07-12 14:11:12 CEST; 6h ago
+    Trigger: Mon 2026-07-13 03:29:16 CEST; 6h left
    Triggers: ● restic-photos-backup.service

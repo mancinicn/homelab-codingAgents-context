@@ -197,10 +197,13 @@ NAS reboot).
 ## Remaining phases
 
 - **Phase 7 remainder**: `deploy_from_repo` design (see above)
-- **Phase 8 follow-up** (not blocking, but real): investigate why this
-  NAS's Docker state doesn't reliably survive a host reboot (see
-  "Ops gateway" section above and ADR-014). The separate Authentik/
-  Traefik 504 found during this investigation, and the untracked
+- **Phase 8 follow-up**: likely root cause found for the reboot-
+  survival issue (UGOS index_serv bug, see "Known issues" above and
+  ADR-014) — not yet fixed/verified. Next: register /volume1/docker
+  and /volume1/appdata as UGOS Shared Folders via the web UI
+  (Christian, needs the NAS UI), then re-test with a real reboot
+  before trusting `reboot` unattended. The separate Authentik/Traefik
+  504 found during this investigation, and the untracked
   /opt/vps-infra/ gap it surfaced, were both resolved the same
   session — see ADR-015
 - **Phase 9**: Immich + vault permissions
@@ -225,6 +228,24 @@ Notable ones beyond what's already covered above:
   the affected containers. Root cause not identified — candidates
   include btrfs/mount timing on /volume1 during boot. Don't rely on
   `reboot` unattended (e.g. Hermes, Phase 10) until understood
+- **NAS reboot-survival — likely root cause found (2026-07-12, ADR-014
+  update)**: UGOS's own `index_serv` (file-indexing daemon) actively
+  watches every write across `/volume1`, including deep inside
+  Docker's `overlay2` storage. Its own logs show a genuine bug —
+  `sharefolder.IsShareFolder(/volume1/appdata) got 0 with error:
+  strconv.ParseUint: parsing "": invalid syntax` — because
+  `/volume1/docker`/`/volume1/appdata` were never registered as UGOS
+  Shared Folders (hand-configured via daemon.json instead, ADR-008).
+  748 occurrences of this error in 6 hours — a continuously firing
+  bug, not reboot-specific, though a reboot's write burst makes
+  hitting the race far more likely. Also found and fixed a THIRD
+  instance the same evening: `n8n` itself silently crash-looped for
+  4.5+ hours (`getaddrinfo EAI_AGAIN n8n-postgres`, restart_count 970+)
+  before being noticed — proactively recreated `n8n-postgres` and
+  `homeassistant` too since neither had been recreated since the
+  reboot. **Suggested fix, not yet tried**: register
+  `/volume1/docker`/`/volume1/appdata` as real UGOS Shared Folders via
+  the web UI, then re-verify with another reboot test
 - **RESOLVED**: Authentik was unreachable through Traefik (hangs/504s)
   — see ADR-015. Root cause: Traefik's Docker provider picked the
   wrong network IP for multi-homed authentik-server. Fixed with a

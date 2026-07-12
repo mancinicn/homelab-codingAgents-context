@@ -62,6 +62,16 @@
   see ADR-008, breaks image extraction on this box otherwise)
 - /etc/docker/daemon.json:
   {"data-root": "/volume1/docker", "features": {"containerd-snapshotter": false}}
+- **Known issue (2026-07-12, ADR-014)**: /volume1/docker and
+  /volume1/appdata are NOT registered as UGOS Shared Folders (set up
+  via hand-edited daemon.json instead) — UGOS's own index_serv file-
+  indexing daemon can't determine their type
+  (`sharefolder.IsShareFolder` fails with a parse error, 748x in 6
+  hours on 2026-07-12) and races unpredictably with Docker's own
+  writes, especially during the write-burst of a reboot. Root cause
+  of the redis/resolv.conf/n8n reboot-survival incidents. Fix not yet
+  applied — register both paths as real Shared Folders via the NAS
+  web UI, then re-verify with a reboot test
 
 ## Auth
 - Authentik groups: authentik Admins (superuser, 2 members: admin,
