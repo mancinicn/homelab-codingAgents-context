@@ -115,12 +115,19 @@
   by recreating the affected containers. Root cause not identified —
   investigate before relying on `reboot` unattended (e.g. via Hermes,
   Phase 10)
-- **Open finding (2026-07-12, unrelated to the above, VPS-side)**:
-  Authentik's outpost config-fetch API (/api/v3/outposts/instances/)
-  returns a consistent 504 Gateway Timeout even though
-  authentik-server's own container healthcheck is green. Discovered
-  only once the NAS-side DNS fix let the outpost actually reach the
-  VPS — likely pre-existing, parked for separate investigation
+- **Resolved (2026-07-12, ADR-015, VPS-side)**: Authentik was
+  completely unreachable through Traefik (hangs / 504s) — root cause
+  was Traefik's Docker provider picking the wrong network IP for
+  authentik-server, which is multi-homed (proxy + authentik-internal).
+  Fixed with an explicit `traefik.docker.network=proxy` label on
+  authentik-server. Any future multi-homed service behind Traefik
+  needs this same label proactively. Along the way, also fixed a
+  latent gap where Traefik's ACME email was silently blank on every
+  recreate (missing .env file for compose variable interpolation,
+  separate from its env_file mechanism) — see ADR-015 for both.
+  **Note**: /opt/vps-infra/ (edge/traefik.yml, identity/authentik.yml,
+  tools/vaultwarden.yml) is NOT tracked in this git repo — live-only
+  on the VPS, a real gap worth closing as a follow-up
 
 ## LLM access
 - Interactive: Claude Code + OpenAI Codex (subscriptions)

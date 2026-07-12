@@ -197,11 +197,13 @@ NAS reboot).
 ## Remaining phases
 
 - **Phase 7 remainder**: `deploy_from_repo` design (see above)
-- **Phase 8 follow-ups** (not blocking, but real): investigate why this
+- **Phase 8 follow-up** (not blocking, but real): investigate why this
   NAS's Docker state doesn't reliably survive a host reboot (see
-  "Ops gateway" section above and ADR-014); investigate a separate,
-  apparently pre-existing Authentik outpost API 504 on the VPS
-  (see Known issues below)
+  "Ops gateway" section above and ADR-014). The separate Authentik/
+  Traefik 504 found during this investigation was resolved the same
+  session — see ADR-015
+- **New follow-up**: import /opt/vps-infra/ into homelab-infra (not
+  currently tracked in git — see ADR-015 "Consequences")
 - **Phase 9**: Immich + vault permissions
 - **Phase 10**: agentic layer (Hermes goes live)
 
@@ -224,13 +226,17 @@ Notable ones beyond what's already covered above:
   the affected containers. Root cause not identified — candidates
   include btrfs/mount timing on /volume1 during boot. Don't rely on
   `reboot` unattended (e.g. Hermes, Phase 10) until understood
-- **Authentik outpost config-fetch API returns 504** (found 2026-07-12,
-  VPS-side, unrelated to the above): `authentik-server`'s own container
-  healthcheck is green, but `/api/v3/outposts/instances/` times out.
-  Discovered only once the NAS-side fix above let the outpost reach
-  the VPS again — likely pre-existing, not caused by this session.
-  Family n8n gate (port 5679) is currently degraded because of this —
-  Christian's own direct access (port 5678) is unaffected
+- **RESOLVED**: Authentik was unreachable through Traefik (hangs/504s)
+  — see ADR-015. Root cause: Traefik's Docker provider picked the
+  wrong network IP for multi-homed authentik-server. Fixed with a
+  `traefik.docker.network=proxy` label. Also fixed a latent blank-ACME-
+  email gap found along the way (missing .env for compose
+  interpolation). Family n8n gate (5679) confirmed working again
+- **`/opt/vps-infra/` is not tracked in git** (found 2026-07-12,
+  ADR-015) — edge/traefik.yml, identity/authentik.yml,
+  tools/vaultwarden.yml all live VPS-only. Contradicts this project's
+  own stated repo split. Worth importing into homelab-infra as a
+  follow-up
 - `akadmin` shows `is_active: true` with a real 2026-07-07 login,
   contradicting the documented "disabled" state — never investigated
 - Wife's real Authentik account still not created (`family` group has

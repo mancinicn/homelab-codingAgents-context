@@ -1,10 +1,10 @@
 ## NAS containers
 NAMES                      IMAGE                                            STATUS
-n8n-outpost                ghcr.io/goauthentik/proxy:2024.8.3               Up 7 minutes (unhealthy)
-n8n-outpost-redis          redis:7-alpine                                   Up 15 minutes
+n8n-outpost                ghcr.io/goauthentik/proxy:2024.8.3               Up 39 minutes (healthy)
+n8n-outpost-redis          redis:7-alpine                                   Up 46 minutes
 ops-gateway                ops-gateway:1.4                                  Up 2 hours (healthy)
 ops-gateway-docker-proxy   tecnativa/docker-socket-proxy:v0.4.2             Up 2 hours
-n8n                        docker.n8n.io/n8nio/n8n:2.29.8                   Up 5 seconds
+n8n                        docker.n8n.io/n8nio/n8n:2.29.8                   Up 17 seconds
 n8n-postgres               postgres:16-alpine                               Up 2 hours (healthy)
 homeassistant              ghcr.io/home-assistant/home-assistant:2026.7.1   Up 2 hours
 
@@ -25,6 +25,6 @@ afbc1ea27eed   ops-gateway_ops-gateway-internal   bridge    local
 ## Backup timer
 ● restic-photos-backup.timer - Daily Restic photo backup
      Loaded: loaded (/etc/systemd/system/restic-photos-backup.timer; enabled; preset: enabled)
-     Active: active (waiting) since Sun 2026-07-12 14:11:12 CEST; 1h 56min ago
-    Trigger: Mon 2026-07-13 03:29:16 CEST; 11h left
+     Active: active (waiting) since Sun 2026-07-12 14:11:12 CEST; 2h 27min ago
+    Trigger: Mon 2026-07-13 03:29:16 CEST; 10h left
    Triggers: ● restic-photos-backup.service
