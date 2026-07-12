@@ -1,9 +1,9 @@
 ## VPS containers
 NAMES                  IMAGE                                 STATUS
-traefik                traefik:v3.2.0                        Up 4 minutes
-authentik-server       ghcr.io/goauthentik/server:2024.8.3   Up 9 minutes (healthy)
-authentik-postgresql   postgres:16-alpine                    Up 10 minutes (healthy)
-backup-gateway         rclone/rclone:1.74.4                  Up 15 hours
+traefik                traefik:v3.2.0                        Up 25 minutes
+authentik-server       ghcr.io/goauthentik/server:2024.8.3   Up 31 minutes (healthy)
+authentik-postgresql   postgres:16-alpine                    Up 31 minutes (healthy)
+backup-gateway         rclone/rclone:1.74.4                  Up 16 hours
 authentik-worker       ghcr.io/goauthentik/server:2024.8.3   Up 5 days (healthy)
 authentik-redis        redis:7-alpine                        Up 5 days (healthy)
 vaultwarden            vaultwarden/server:1.32.7             Up 6 days (healthy)

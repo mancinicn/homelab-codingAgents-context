@@ -200,10 +200,9 @@ NAS reboot).
 - **Phase 8 follow-up** (not blocking, but real): investigate why this
   NAS's Docker state doesn't reliably survive a host reboot (see
   "Ops gateway" section above and ADR-014). The separate Authentik/
-  Traefik 504 found during this investigation was resolved the same
+  Traefik 504 found during this investigation, and the untracked
+  /opt/vps-infra/ gap it surfaced, were both resolved the same
   session — see ADR-015
-- **New follow-up**: import /opt/vps-infra/ into homelab-infra (not
-  currently tracked in git — see ADR-015 "Consequences")
 - **Phase 9**: Immich + vault permissions
 - **Phase 10**: agentic layer (Hermes goes live)
 
@@ -232,11 +231,12 @@ Notable ones beyond what's already covered above:
   `traefik.docker.network=proxy` label. Also fixed a latent blank-ACME-
   email gap found along the way (missing .env for compose
   interpolation). Family n8n gate (5679) confirmed working again
-- **`/opt/vps-infra/` is not tracked in git** (found 2026-07-12,
-  ADR-015) — edge/traefik.yml, identity/authentik.yml,
-  tools/vaultwarden.yml all live VPS-only. Contradicts this project's
-  own stated repo split. Worth importing into homelab-infra as a
-  follow-up
+- **RESOLVED**: `/opt/vps-infra/` (edge/traefik.yml,
+  identity/authentik.yml, tools/vaultwarden.yml) imported into
+  homelab-infra under `vps/edge/`, `vps/identity/`, `vps/tools/`
+  (2026-07-12, ADR-015) — pushed back to the VPS so live and repo
+  match exactly. Deploy path unchanged: edit in the repo, scp to the
+  same relative path under /opt/vps-infra/, docker compose up -d
 - `akadmin` shows `is_active: true` with a real 2026-07-07 login,
   contradicting the documented "disabled" state — never investigated
 - Wife's real Authentik account still not created (`family` group has

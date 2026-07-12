@@ -125,9 +125,10 @@
   latent gap where Traefik's ACME email was silently blank on every
   recreate (missing .env file for compose variable interpolation,
   separate from its env_file mechanism) — see ADR-015 for both.
-  **Note**: /opt/vps-infra/ (edge/traefik.yml, identity/authentik.yml,
-  tools/vaultwarden.yml) is NOT tracked in this git repo — live-only
-  on the VPS, a real gap worth closing as a follow-up
+  /opt/vps-infra/ (edge/traefik.yml, identity/authentik.yml,
+  tools/vaultwarden.yml) — previously untracked, live-only on the VPS
+  — has since been imported into homelab-infra under vps/edge/,
+  vps/identity/, vps/tools/ and pushed back so live and repo match
 
 ## LLM access
 - Interactive: Claude Code + OpenAI Codex (subscriptions)
