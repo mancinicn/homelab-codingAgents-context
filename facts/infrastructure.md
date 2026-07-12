@@ -76,8 +76,17 @@
 
 ## Agent access
 - agent_ops on NAS: SSH key, narrow sudoers (safe docker ops only)
-- docker run/rm/prune BLOCKED until Phase 5 (append-only backup)
+- docker run/rm/prune BLOCKED until Phase 5 (append-only backup) — DONE
 - Secrets in /etc/vps-secrets/ and /etc/nas-secrets/ (never in git)
+- Ops gateway (Phase 6, ADR-011): http://100.126.31.47:8300, NAS-only,
+  tailnet-only. Named read-only actions: service_status, get_logs,
+  disk_usage, backup_health. Bearer token auth (svc-claude, svc-hermes),
+  every call audited. Claude holds a standing svc-claude token (a
+  deliberate extension beyond ADR-006's borrowed-session model, made
+  explicitly — see session 6 / decisions), stored locally on the
+  laptop only (C:\Users\jm2_c\.ops-gateway-token, outside both git
+  clones), never in git or chat. svc-hermes token generated and in
+  Vaultwarden, unused until Hermes exists (Phase 10)
 
 ## LLM access
 - Interactive: Claude Code + OpenAI Codex (subscriptions)
