@@ -1,6 +1,6 @@
 # Claude Code Handover — Homelab Infrastructure Build
 
-Snapshot as of 2026-07-12, end of session 9. This is a point-in-time
+Snapshot as of 2026-07-13, end of session 10. This is a point-in-time
 summary for starting a new chat — it will go stale. For anything that
 matters, verify against the live repos/state rather than trusting this
 document blindly (same rule as everywhere else in this project).
@@ -83,7 +83,7 @@ not something that happens silently.
 | Service | Image | Access |
 |---|---|---|
 | Traefik | v3.2.0 | 80/443 public, Cloudflare DNS challenge TLS |
-| Vaultwarden | 1.32.7 | vault.christianmancini.de — master pw RESET 2026-07-13, see ADR-016 |
+| Vaultwarden | 1.36.0 | vault.christianmancini.de — master pw RESET + upgraded 1.32.7→1.36.0 2026-07-13, see ADR-016/017 |
 | Authentik | 2024.8.3 | auth.christianmancini.de |
 | n8n (n8n-zuij) | legacy | tailnet-only — still running, retirement deliberately deferred, not scheduled |
 | backup-gateway | rclone/rclone:1.74.4 | tailnet-only 100.94.111.98:8200, append-only B2 relay |
@@ -117,12 +117,16 @@ pinned tag from `SERVICE_IMAGES` in `app/main.py`, never `:latest`).
 echoes the exact action, 10-minute expiry. `approval_status/{id}`
 polls the outcome.
 
-**Destructive, approval-gated** (Phase 8, ADR-014): `remove_container`,
+**Destructive/write, approval-gated** (Phase 8 ADR-014 + Phase 7
+remainder ADR-018): `remove_container`,
 `remove_volume` (cleanup-only — dynamically discovered stopped
 containers / dangling volumes, never the named core services),
 `prune` (bundled containers+volumes+dangling-images — `volumes/prune`
 needs `filters={"all":"true"}` or named volumes survive it, a real bug
-found and fixed during testing), `reboot` (file-trigger to a host-side
+found and fixed during testing), `deploy/{name}` (deploy_from_repo —
+file-trigger to a host systemd unit running `docker compose up -d`
+against a fixed allowlist, no docker socket/SSH key in the container),
+`reboot` (file-trigger to a host-side
 systemd path unit, `nas/scripts/ops-gateway-reboot.path`/`.service` —
 Docker's API has no reboot endpoint, so this is the one capability
 outside Docker entirely, and it's exactly one file-create, no SSH key
@@ -142,11 +146,12 @@ laptop only — outside both git clones, never committed, never pasted
 in chat. Read fresh via Bash each call. `svc-hermes` token is in
 Vaultwarden, unused until Hermes exists.
 
-**Not built**: `deploy_from_repo` — needs container creation, which
-would require broadening the docker-socket-proxy significantly
-(breaks its narrow-scope model) or reusing `agent_ops`'s SSH credential
-from inside the gateway (reopens a rejected tradeoff). Needs a real
-design decision, not a rushed bundling — see ADR-012.
+**`deploy_from_repo` — BUILT (2026-07-13, ADR-018)**: solved with a
+THIRD option beating both ADR-012 tradeoffs — the Phase 8 reboot file-
+trigger pattern. `POST /deploy/{name}` (allowlist + approval) writes a
+service name to a trigger file; a root host systemd unit runs
+`docker compose up -d <svc>`. No socket/SSH key in the container.
+v1 deploys the scp-staged compose tree; git-pull-on-NAS is a v2.
 
 ## Secrets locations (NEVER in git, NEVER in chat)
 
@@ -192,11 +197,17 @@ import/VPS-retirement deliberately deferred) → 4.5 (Home Assistant) →
 read-only) → 7 v1 (restart_service, pull_image) → Telegram approval
 flow (built ahead of schedule) → 8 (destructive actions: remove_container,
 remove_volume, prune, reboot — verified end-to-end including a real
-NAS reboot).
+NAS reboot) → VPS self-backup + Vaultwarden 1.36.0 (ADR-017) → Phase 7
+remainder deploy_from_repo (ADR-018).
 
 ## Remaining phases
 
-- **Phase 7 remainder**: `deploy_from_repo` design (see above)
+- **Phase 7 remainder — DONE** (2026-07-13, ADR-018): `deploy_from_repo`
+  built + verified (see ops-gateway section above)
+- **Auto-update controller** (NEW, Christian's request 2026-07-13):
+  health-gated automatic Docker image updates with auto-rollback on
+  failed health check. Sits on deploy_from_repo. Full design on the
+  roadmap; needs its own plan + ADR — first slice of Phase 10 watchdog.
 - **Phase 8 follow-up**: root cause found for the reboot-survival
   issue (UGOS index_serv bug, see "Known issues" above and ADR-014),
   but the UI fix path is blocked — UGOS's "Create Shared Folder" can't
@@ -228,9 +239,11 @@ Notable ones beyond what's already covered above:
   passwords NOT yet re-entered. Follow-ups: emergency access (needs
   wife's account), automated encrypted exports, Vaultwarden upgrade
   (1.32.7 is breaking current clients).
-- **VPS app data has NO backup** (Vaultwarden vault + Authentik DB) —
-  surfaced 2026-07-13. A VPS disk failure = real recovery pain. New
-  backlog milestone; pair it with the Vaultwarden upgrade.
+- **RESOLVED (2026-07-13, ADR-017)**: VPS now self-backs-up
+  (Vaultwarden + Authentik + Traefik certs) to a separate immutable
+  restic repo (backup-gateway-vps on 127.0.0.1:8201, `/vps` subpath),
+  verified with restore-and-diff + a 403-on-DELETE immutability check.
+  Vaultwarden also upgraded 1.32.7 → 1.36.0 (backup-first).
 - **This NAS's Docker state doesn't reliably survive a host reboot**
   (found 2026-07-12, ADR-014): a real reboot test corrupted ownership/
   permissions on a redis anonymous volume and an outpost container's

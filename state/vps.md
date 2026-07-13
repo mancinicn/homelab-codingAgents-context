@@ -1,20 +1,21 @@
 ## VPS containers
 NAMES                  IMAGE                                 STATUS
-n8n                    docker.n8n.io/n8nio/n8n:latest        Restarting (1) 3 seconds ago
-postgres               postgres:16-alpine                    Up 7 hours
-redis                  redis:alpine                          Up 7 hours
-traefik                traefik:v3.2.0                        Up 18 hours
-authentik-server       ghcr.io/goauthentik/server:2024.8.3   Up 18 hours (healthy)
-authentik-postgresql   postgres:16-alpine                    Up 18 hours (healthy)
-backup-gateway         rclone/rclone:1.74.4                  Up 33 hours
+vaultwarden            vaultwarden/server:1.36.0             Up 19 minutes (healthy)
+backup-gateway         rclone/rclone:1.74.4                  Up 34 minutes
+backup-gateway-vps     rclone/rclone:1.74.4                  Up 34 minutes
+n8n                    docker.n8n.io/n8nio/n8n:latest        Restarting (1) 8 seconds ago
+postgres               postgres:16-alpine                    Up 21 hours
+redis                  redis:alpine                          Up 21 hours
+traefik                traefik:v3.2.0                        Up 31 hours
+authentik-server       ghcr.io/goauthentik/server:2024.8.3   Up 31 hours (healthy)
+authentik-postgresql   postgres:16-alpine                    Up 31 hours (healthy)
 authentik-worker       ghcr.io/goauthentik/server:2024.8.3   Up 6 days (healthy)
 authentik-redis        redis:7-alpine                        Up 6 days (healthy)
-vaultwarden            vaultwarden/server:1.32.7             Up 25 minutes (healthy)
-n8n-zuij-n8n-1         aaabdbd46cae                          Up 6 days
+n8n-zuij-n8n-1         aaabdbd46cae                          Up 7 days
 
 ## VPS disk
 Filesystem      Size  Used Avail Use% Mounted on
-/dev/sda1        96G   49G   47G  52% /
+/dev/sda1        96G   50G   47G  52% /
 
 ## VPS public listeners (expected: 22, 80, 443, 41641/udp)
 udp   UNCONN 0      0                       127.0.0.54:53         0.0.0.0:*          
@@ -28,6 +29,7 @@ tcp   LISTEN 0      4096                       0.0.0.0:443        0.0.0.0:*
 tcp   LISTEN 0      4096                 100.94.111.98:4000       0.0.0.0:*          
 tcp   LISTEN 0      4096                 100.94.111.98:8080       0.0.0.0:*          
 tcp   LISTEN 0      4096                 100.94.111.98:11434      0.0.0.0:*          
+tcp   LISTEN 0      4096                     127.0.0.1:8201       0.0.0.0:*          
 tcp   LISTEN 0      4096                 100.94.111.98:44468      0.0.0.0:*          
 tcp   LISTEN 0      4096                 127.0.0.53%lo:53         0.0.0.0:*          
 tcp   LISTEN 0      4096                    127.0.0.54:53         0.0.0.0:*          

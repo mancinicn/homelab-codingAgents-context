@@ -20,7 +20,9 @@
 
 ## Services
 - Traefik v3.2.0: TLS via Cloudflare DNS challenge
-- Vaultwarden v1.32.7: vault.christianmancini.de
+- Vaultwarden v1.36.0 (upgraded from 1.32.7 on 2026-07-13, ADR-017 —
+  backup-verified first; no breaking changes; fixes the bw-CLI version
+  mismatch): vault.christianmancini.de
   - **Master password RESET 2026-07-13** (ADR-016): old one lost, old
     vault archived at /srv/appdata/vaultwarden.locked-20260713 (VPS,
     still encrypted with the old password — keep until sure nothing
@@ -115,12 +117,16 @@
   Write (Phase 7 v1): restart_service (docker-socket-proxy
   ALLOW_RESTARTS flag, narrow), pull_image (IMAGES+POST, pulls the
   exact pinned tag from SERVICE_IMAGES in app/main.py, never :latest).
-  Destructive, approval-gated (Phase 8): remove_container,
+  Destructive/write, approval-gated: remove_container,
   remove_volume (cleanup-only — stopped containers / dangling volumes
   only, never the named core services), prune (bundled
   containers+volumes+dangling-images, requires filters={"all":"true"}
   on volumes/prune or named volumes survive it — real bug found and
-  fixed during testing), reboot (file-trigger to a host-side systemd
+  fixed during testing), deploy (Phase 7 remainder, ADR-018 — file-
+  trigger to a host systemd unit running `docker compose up -d <svc>`
+  against a fixed allowlist DEPLOYABLE_SERVICES = the 5 core services;
+  no docker socket/SSH key in the container; ops-gateway itself
+  excluded), reboot (file-trigger to a host-side systemd
   path unit — nas/scripts/ops-gateway-reboot.path/.service — Docker's
   API has no reboot endpoint at all, so this is the one capability
   outside Docker entirely, and it's exactly one file-create, no SSH
@@ -168,6 +174,15 @@
 ## Backup
 - restic → Backblaze B2, bucket ugreen-restic-62fdead3d97f, THROUGH the
   append-only gateway (Phase 5 DONE, cutover completed 2026-07-12)
+- **VPS self-backup (ADR-017, 2026-07-13)**: the VPS now backs ITSELF
+  up (Vaultwarden vault + Authentik pg_dump + Traefik acme.json) to a
+  SEPARATE restic repo — a `/vps` subpath of the same bucket, served by
+  a second rclone instance `backup-gateway-vps` on 127.0.0.1:8201
+  (localhost-only, append-only). Separate encryption password held only
+  on the VPS (in Vaultwarden + paper kit, unrecoverable). restic 0.19.1
+  installed on the VPS. Daily 04:30 via restic-vps-backup.timer.
+  Verified: restore-and-diff + a 403-on-DELETE immutability check.
+  Telegram-on-failure wired but silent until notify.env is populated.
 - Append-only gateway (ADR-010): `backup-gateway` container on VPS,
   tailnet-only (100.94.111.98:8200), rclone/rclone:1.74.4 running
   `serve restic --append-only`. NAS can add new backups, cannot delete
