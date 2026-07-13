@@ -197,13 +197,14 @@ NAS reboot).
 ## Remaining phases
 
 - **Phase 7 remainder**: `deploy_from_repo` design (see above)
-- **Phase 8 follow-up**: likely root cause found for the reboot-
-  survival issue (UGOS index_serv bug, see "Known issues" above and
-  ADR-014) — not yet fixed/verified. Next: register /volume1/docker
-  and /volume1/appdata as UGOS Shared Folders via the web UI
-  (Christian, needs the NAS UI), then re-test with a real reboot
-  before trusting `reboot` unattended. The separate Authentik/Traefik
-  504 found during this investigation, and the untracked
+- **Phase 8 follow-up**: root cause found for the reboot-survival
+  issue (UGOS index_serv bug, see "Known issues" above and ADR-014),
+  but the UI fix path is blocked — UGOS's "Create Shared Folder" can't
+  adopt an existing directory, only create new ones, and no exclusion-
+  only setting was found. Decision: accept the proven "recreate every
+  container after any reboot" mitigation for now, revisit the real fix
+  later (likely via UGREEN support directly). The separate Authentik/
+  Traefik 504 found during this investigation, and the untracked
   /opt/vps-infra/ gap it surfaced, were both resolved the same
   session — see ADR-015
 - **Phase 9**: Immich + vault permissions

@@ -206,6 +206,33 @@ the undefined behavior. Needs Christian to do via the UGOS web UI (no
 credential/access for this exists on the agent side) and then verify
 with another real reboot test before trusting `reboot` unattended.
 
+### Update, same day: fix attempt blocked, decision to accept the workaround for now
+Christian tried creating a Shared Folder named `appdata` via UGOS's
+Control Panel — it refused with a name-collision error, confirming
+`/volume1/appdata` genuinely exists (root:root, mode 700) but UGOS's
+"Create" flow has no "adopt an existing directory" option, only
+"create new." Checked the full `/volume1` listing programmatically to
+rule out folder-naming confusion first — none found, every top-level
+name is unique and intentional; `docker`/`homeassistant` showing
+`d---------` (zero permissions) at the top level turned out to be
+long-standing (homeassistant's unchanged since March 8), not reboot
+damage — the actual corruption was always on specific files *inside*
+these trees (e.g. redis's `dump.rdb`), not top-level directory
+permissions.
+
+Searched for a UGOS-specific indexing-exclusion setting that might
+sidestep the shared-folder-registration requirement entirely — no
+public documentation found covering `index_serv`'s configuration in
+enough detail to guide this safely without seeing the actual UI.
+
+**Decision**: stop chasing the UI-level root-cause fix for now.
+Accept the proven, already-validated mitigation (recreate every
+container after any reboot, not just the ones with visible symptoms)
+as the standing practice. Revisit the real fix later, likely by
+contacting UGREEN support directly for the documented way to register
+an existing folder as a Shared Folder (if one exists) — not something
+worth continuing to guess at without visibility into the actual UI.
+
 ## Consequences
 - All four actions verified with real resources, real Telegram
   approvals, and real before/after checks — not just backend logic:

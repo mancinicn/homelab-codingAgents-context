@@ -69,9 +69,11 @@
   (`sharefolder.IsShareFolder` fails with a parse error, 748x in 6
   hours on 2026-07-12) and races unpredictably with Docker's own
   writes, especially during the write-burst of a reboot. Root cause
-  of the redis/resolv.conf/n8n reboot-survival incidents. Fix not yet
-  applied — register both paths as real Shared Folders via the NAS
-  web UI, then re-verify with a reboot test
+  of the redis/resolv.conf/n8n reboot-survival incidents. UI fix path
+  blocked — UGOS's "Create Shared Folder" can't adopt an existing
+  directory (confirmed by a real attempt, name-collision error).
+  Decision: accept "recreate every container after any reboot" as the
+  standing mitigation for now; revisit via UGREEN support later
 
 ## Auth
 - Authentik groups: authentik Admins (superuser, 2 members: admin,
