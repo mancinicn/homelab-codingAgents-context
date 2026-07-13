@@ -83,7 +83,7 @@ not something that happens silently.
 | Service | Image | Access |
 |---|---|---|
 | Traefik | v3.2.0 | 80/443 public, Cloudflare DNS challenge TLS |
-| Vaultwarden | 1.32.7 | vault.christianmancini.de |
+| Vaultwarden | 1.32.7 | vault.christianmancini.de — master pw RESET 2026-07-13, see ADR-016 |
 | Authentik | 2024.8.3 | auth.christianmancini.de |
 | n8n (n8n-zuij) | legacy | tailnet-only — still running, retirement deliberately deferred, not scheduled |
 | backup-gateway | rclone/rclone:1.74.4 | tailnet-only 100.94.111.98:8200, append-only B2 relay |
@@ -222,6 +222,15 @@ Notable ones beyond what's already covered above:
 
 ## Known issues / open loose ends
 
+- **Vaultwarden master password reset 2026-07-13** (ADR-016): old vault
+  archived at /srv/appdata/vaultwarden.locked-20260713 (VPS). New vault
+  has 8 Category-A env-file recovery notes; Category-B external account
+  passwords NOT yet re-entered. Follow-ups: emergency access (needs
+  wife's account), automated encrypted exports, Vaultwarden upgrade
+  (1.32.7 is breaking current clients).
+- **VPS app data has NO backup** (Vaultwarden vault + Authentik DB) —
+  surfaced 2026-07-13. A VPS disk failure = real recovery pain. New
+  backlog milestone; pair it with the Vaultwarden upgrade.
 - **This NAS's Docker state doesn't reliably survive a host reboot**
   (found 2026-07-12, ADR-014): a real reboot test corrupted ownership/
   permissions on a redis anonymous volume and an outpost container's

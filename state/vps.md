@@ -1,20 +1,20 @@
 ## VPS containers
 NAMES                  IMAGE                                 STATUS
-n8n                    docker.n8n.io/n8nio/n8n:latest        Restarting (1) 20 seconds ago
-postgres               postgres:16-alpine                    Up 6 hours
-redis                  redis:alpine                          Up 6 hours
-traefik                traefik:v3.2.0                        Up 17 hours
-authentik-server       ghcr.io/goauthentik/server:2024.8.3   Up 17 hours (healthy)
-authentik-postgresql   postgres:16-alpine                    Up 17 hours (healthy)
-backup-gateway         rclone/rclone:1.74.4                  Up 32 hours
-authentik-worker       ghcr.io/goauthentik/server:2024.8.3   Up 5 days (healthy)
-authentik-redis        redis:7-alpine                        Up 5 days (healthy)
-vaultwarden            vaultwarden/server:1.32.7             Up 6 days (healthy)
+n8n                    docker.n8n.io/n8nio/n8n:latest        Restarting (1) 3 seconds ago
+postgres               postgres:16-alpine                    Up 7 hours
+redis                  redis:alpine                          Up 7 hours
+traefik                traefik:v3.2.0                        Up 18 hours
+authentik-server       ghcr.io/goauthentik/server:2024.8.3   Up 18 hours (healthy)
+authentik-postgresql   postgres:16-alpine                    Up 18 hours (healthy)
+backup-gateway         rclone/rclone:1.74.4                  Up 33 hours
+authentik-worker       ghcr.io/goauthentik/server:2024.8.3   Up 6 days (healthy)
+authentik-redis        redis:7-alpine                        Up 6 days (healthy)
+vaultwarden            vaultwarden/server:1.32.7             Up 25 minutes (healthy)
 n8n-zuij-n8n-1         aaabdbd46cae                          Up 6 days
 
 ## VPS disk
 Filesystem      Size  Used Avail Use% Mounted on
-/dev/sda1        96G   49G   48G  51% /
+/dev/sda1        96G   49G   47G  52% /
 
 ## VPS public listeners (expected: 22, 80, 443, 41641/udp)
 udp   UNCONN 0      0                       127.0.0.54:53         0.0.0.0:*          

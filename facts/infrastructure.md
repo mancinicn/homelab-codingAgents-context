@@ -21,6 +21,25 @@
 ## Services
 - Traefik v3.2.0: TLS via Cloudflare DNS challenge
 - Vaultwarden v1.32.7: vault.christianmancini.de
+  - **Master password RESET 2026-07-13** (ADR-016): old one lost, old
+    vault archived at /srv/appdata/vaultwarden.locked-20260713 (VPS,
+    still encrypted with the old password — keep until sure nothing
+    missing). New master password; recovery via paper kit (root of
+    trust), future emergency-access + encrypted exports. NO server-side
+    reset exists — passkeys/TOTP are 2FA-only, cannot recover a master
+    password.
+  - **Vault contents**: Category A = recovery copies of 8 env/secret
+    files (imported as `env: <host>:<path>` secure notes) — primary
+    still lives in the env files on the boxes. Category B = external
+    account passwords with no env file (UGOS, Hostinger, Cloudflare,
+    Backblaze, Tailscale, GitHub, Brevo, Authentik admin/akadmin, HA,
+    n8n) — vault is PRIMARY, not yet re-entered post-reset. See ADR-016.
+  - **bw CLI gotcha**: current CLI is incompatible with this server
+    version (404 on prelogin/password); use cli-v2024.9.0. Signals a
+    Vaultwarden upgrade is due — see ADR-016.
+  - **NO backup of VPS app data** (Vaultwarden vault + Authentik DB) —
+    open gap surfaced 2026-07-13, unrelated to the password loss but
+    same total-loss blast radius. Backlog item.
 - Authentik 2024.8.3: auth.christianmancini.de
 - n8n 2.29.8: on NAS, tailnet-only (http://100.126.31.47:5678), own
   Postgres 16-alpine. VPS n8n (n8n-zuij) still running — not yet retired.
