@@ -43,7 +43,8 @@
     open gap surfaced 2026-07-13, unrelated to the password loss but
     same total-loss blast radius. Backlog item.
 - Authentik 2024.8.3: auth.christianmancini.de
-- n8n 2.29.8: on NAS, tailnet-only (http://100.126.31.47:5678), own
+- n8n 2.30.4 (auto-updated from 2.29.8 by the ADR-019 controller
+  2026-07-14): on NAS, tailnet-only (http://100.126.31.47:5678), own
   Postgres 16-alpine. VPS n8n (n8n-zuij) still running — not yet retired.
   Also gated by an Authentik outpost at http://100.126.31.47:5679 (see
   below). SMTP via Brevo (smtp-relay.brevo.com:587, separate SMTP key
@@ -51,7 +52,8 @@
   2026-07-10. Tailscale ACL now scopes group:family to ports 8123/5679
   only on the NAS, so 5678 is effectively admin-only via the tailnet
   (still technically bound and reachable by Christian's own devices)
-- Home Assistant 2026.7.1: on NAS, host network
+- Home Assistant 2026.7.2 (auto-updated from 2026.7.1 by the ADR-019
+  controller 2026-07-14): on NAS, host network
   (http://100.126.31.47:8123 + LAN), native auth, config at
   /volume1/appdata/homeassistant
 
@@ -166,6 +168,26 @@
   tools/vaultwarden.yml) — previously untracked, live-only on the VPS
   — has since been imported into homelab-infra under vps/edge/,
   vps/identity/, vps/tools/ and pushed back so live and repo match
+
+## Auto-update controller (ADR-019, 2026-07-14)
+- Weekly root systemd timer on the NAS (image-autoupdate.timer, Sun
+  05:00 after backups) → /usr/local/bin/image-autoupdate.sh. Auto-
+  updates managed services within their major line, health-checks each,
+  AUTO-ROLLS-BACK on failure. v1 manages n8n + Home Assistant only.
+- Running version lives in each compose dir's ./.env (N8N_VERSION,
+  HA_VERSION) — git-tracked (narrow .gitignore exceptions; version-only,
+  no secrets). The compose image line reads ${VAR}; compose auto-reads
+  the .env. The updater rewrites the .env line (never edits yaml) and
+  `docker compose up -d <svc>`; rollback = rewrite + up -d.
+- Never auto-crosses a major (n8n semver major; HA calendar year) —
+  Telegram-notify-only for those. Reuses the notify bot. --dry-run and
+  --only <svc> flags; IMAGE_AUTOUPDATE_FORCE_HEALTH_FAIL=1 test hook.
+- Adding a service: one config row in the script + parameterize its
+  compose image via ${VERSION} + a real health check.
+- Known v1 gap: git-drift — the updater edits the STAGED .env on the
+  NAS; the repo .env is reconciled manually at commit time until the
+  git-on-NAS v2 (same v2 as deploy_from_repo). Also ops-gateway
+  SERVICE_IMAGES (pull_image) can lag — low harm.
 
 ## LLM access
 - Interactive: Claude Code + OpenAI Codex (subscriptions)

@@ -1,17 +1,17 @@
 ## VPS containers
 NAMES                  IMAGE                                 STATUS
-vaultwarden            vaultwarden/server:1.36.0             Up 19 minutes (healthy)
-backup-gateway         rclone/rclone:1.74.4                  Up 34 minutes
-backup-gateway-vps     rclone/rclone:1.74.4                  Up 34 minutes
-n8n                    docker.n8n.io/n8nio/n8n:latest        Restarting (1) 8 seconds ago
-postgres               postgres:16-alpine                    Up 21 hours
-redis                  redis:alpine                          Up 21 hours
-traefik                traefik:v3.2.0                        Up 31 hours
-authentik-server       ghcr.io/goauthentik/server:2024.8.3   Up 31 hours (healthy)
-authentik-postgresql   postgres:16-alpine                    Up 31 hours (healthy)
-authentik-worker       ghcr.io/goauthentik/server:2024.8.3   Up 6 days (healthy)
-authentik-redis        redis:7-alpine                        Up 6 days (healthy)
-n8n-zuij-n8n-1         aaabdbd46cae                          Up 7 days
+vaultwarden            vaultwarden/server:1.36.0             Up 21 hours (healthy)
+backup-gateway         rclone/rclone:1.74.4                  Up 21 hours
+backup-gateway-vps     rclone/rclone:1.74.4                  Up 21 hours
+n8n                    docker.n8n.io/n8nio/n8n:latest        Restarting (1) 42 seconds ago
+postgres               postgres:16-alpine                    Up 41 hours
+redis                  redis:alpine                          Up 41 hours
+traefik                traefik:v3.2.0                        Up 2 days
+authentik-server       ghcr.io/goauthentik/server:2024.8.3   Up 2 days (healthy)
+authentik-postgresql   postgres:16-alpine                    Up 2 days (healthy)
+authentik-worker       ghcr.io/goauthentik/server:2024.8.3   Up 7 days (healthy)
+authentik-redis        redis:7-alpine                        Up 7 days (healthy)
+n8n-zuij-n8n-1         aaabdbd46cae                          Up 8 days
 
 ## VPS disk
 Filesystem      Size  Used Avail Use% Mounted on

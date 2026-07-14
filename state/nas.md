@@ -1,16 +1,16 @@
 ## NAS containers
 NAMES                      IMAGE                                            STATUS
-n8n-outpost-redis          redis:7-alpine                                   Up 5 minutes
-ops-gateway                ops-gateway:1.5                                  Up 9 minutes (healthy)
-homeassistant              ghcr.io/home-assistant/home-assistant:2026.7.1   Up 27 hours
-n8n-postgres               postgres:16-alpine                               Up 27 hours (healthy)
-n8n                        docker.n8n.io/n8nio/n8n:2.29.8                   Up 27 hours
-n8n-outpost                ghcr.io/goauthentik/proxy:2024.8.3               Up 32 hours (healthy)
-ops-gateway-docker-proxy   tecnativa/docker-socket-proxy:v0.4.2             Up 34 hours
+homeassistant              ghcr.io/home-assistant/home-assistant:2026.7.2   Up 2 minutes
+n8n                        docker.n8n.io/n8nio/n8n:2.30.4                   Up 5 minutes
+n8n-outpost-redis          redis:7-alpine                                   Up 20 hours
+ops-gateway                ops-gateway:1.5                                  Up 21 hours (healthy)
+n8n-postgres               postgres:16-alpine                               Up 47 hours (healthy)
+n8n-outpost                ghcr.io/goauthentik/proxy:2024.8.3               Up 2 days (healthy)
+ops-gateway-docker-proxy   tecnativa/docker-socket-proxy:v0.4.2             Up 2 days
 
 ## NAS disk
 Filesystem                                      Size  Used Avail Use% Mounted on
-/dev/mapper/ug_B584AF_1766063350_pool1-volume1  3.7T  178G  3.5T   5% /volume1
+/dev/mapper/ug_B584AF_1766063350_pool1-volume1  3.7T  182G  3.5T   5% /volume1
 
 ## NAS docker networks
 NETWORK ID     NAME                               DRIVER    SCOPE
@@ -25,6 +25,6 @@ afbc1ea27eed   ops-gateway_ops-gateway-internal   bridge    local
 ## Backup timer
 ● restic-photos-backup.timer - Daily Restic photo backup
      Loaded: loaded (/etc/systemd/system/restic-photos-backup.timer; enabled; preset: enabled)
-     Active: active (waiting) since Sun 2026-07-12 14:11:12 CEST; 1 day 9h ago
-    Trigger: Tue 2026-07-14 03:17:19 CEST; 3h 30min left
+     Active: active (waiting) since Sun 2026-07-12 14:11:12 CEST; 2 days ago
+    Trigger: Wed 2026-07-15 03:21:45 CEST; 7h left
    Triggers: ● restic-photos-backup.service

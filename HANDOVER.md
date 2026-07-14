@@ -204,10 +204,15 @@ remainder deploy_from_repo (ADR-018).
 
 - **Phase 7 remainder — DONE** (2026-07-13, ADR-018): `deploy_from_repo`
   built + verified (see ops-gateway section above)
-- **Auto-update controller** (NEW, Christian's request 2026-07-13):
-  health-gated automatic Docker image updates with auto-rollback on
-  failed health check. Sits on deploy_from_repo. Full design on the
-  roadmap; needs its own plan + ADR — first slice of Phase 10 watchdog.
+- **Auto-update controller — BUILT** (2026-07-14, ADR-019): weekly
+  root systemd timer on the NAS auto-updates n8n + Home Assistant
+  within their major line, health-checks each, auto-rolls-back on
+  failure. Rollback proven on a live service. Version state in each
+  compose dir's git-tracked ./.env. Config-driven (add a service =
+  one row + parameterized image + health check). v1 excludes
+  DBs/outpost/VPS; never auto-crosses a major. Known gap: git-drift
+  (staged .env vs repo, reconciled manually until git-on-NAS v2).
+  Next natural extensions: add more services; extend to the VPS.
 - **Phase 8 follow-up**: root cause found for the reboot-survival
   issue (UGOS index_serv bug, see "Known issues" above and ADR-014),
   but the UI fix path is blocked — UGOS's "Create Shared Folder" can't
