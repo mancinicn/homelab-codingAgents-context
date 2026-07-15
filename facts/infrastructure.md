@@ -64,7 +64,9 @@
   initially (see decisions/009), its provider binding has been removed,
   leave it alone going forward.
 - Provider: `n8n-family` (Proxy mode, internal host http://n8n:5678,
-  external host http://100.126.31.47:5679)
+  external host http://100.126.31.47:5679 — **needs updating to
+  https://n8n.christianmancini.de**, see "Public n8n route" below;
+  not yet done)
 - Application: `n8n (Family)` (slug n8n-family), policy_engine_mode
   "any", bound to groups `family` and `authentik Admins`
 - Outpost containers on NAS: `n8n-outpost` + `n8n-outpost-redis`
@@ -78,6 +80,44 @@
   was never actually created — still to do.
 - Restic backup: NAS → B2, daily timer, verified (does NOT yet cover
   /volume1/appdata — that's Phase 5)
+
+## Public n8n route (2026-07-15)
+`n8n.christianmancini.de` now reaches the canonical NAS n8n through the
+VPS's Traefik — the first cross-host route in this setup (VPS Traefik
+previously had only a Docker provider; the NAS backend isn't Docker-
+discoverable at all from the VPS).
+- Config: `vps/edge/traefik.yml` (adds `--providers.file.directory=
+  /data/dynamic` + `--providers.file.watch=true`) + `vps/edge/dynamic/
+  n8n.yml` (two routers on Host(`n8n.christianmancini.de`): `n8n-webhook`,
+  higher priority, `PathPrefix(\`/webhook\`)` → straight to n8n's raw
+  port 5678, bypassing Authentik entirely for incoming webhooks;
+  `n8n-ui`, catch-all, → the existing family-scoped outpost on 5679).
+  **Deploy gotcha**: the dynamic config directory must land at
+  `/srv/appdata/traefik/dynamic/` (the actual bind-mounted `/data`
+  volume) — NOT `/opt/vps-infra/edge/dynamic/` (just where the compose
+  file itself lives). Got this wrong once already.
+- DNS: Cloudflare record for this hostname existed already (pre-rebuild
+  leftover) but was Proxied (orange-cloud) — switched to DNS-only to
+  match every other hostname on this domain.
+- **Found + fixed a real pre-existing bug along the way**: the bare
+  `- CLOUDFLARE_DNS_API_TOKEN` line under `traefik.yml`'s `environment:`
+  was silently unsetting whatever `env_file:` provided on every
+  recreate (Compose resolves bare entries from its own parse-time
+  context, not `env_file:`). Never noticed because existing domains'
+  certs were already cached — would have silently broken renewal for
+  every domain on this Traefik at their next ~90-day expiry. Fixed by
+  removing that line; `env_file:` alone is correct for a secret.
+- Verified working: webhook path bypasses auth (hits n8n directly, 404
+  on a nonexistent test path — correct n8n behavior, not an auth
+  redirect); UI path redirects to the Authentik outpost; TLS cert
+  issued cleanly (`cf` resolver); Vaultwarden/Authentik still healthy
+  after the Traefik recreates.
+- **NOT yet done**: the `n8n-family` Authentik provider's External host
+  still says `http://100.126.31.47:5679` (tailnet-only) instead of
+  `https://n8n.christianmancini.de`. Until Christian makes that one-field
+  edit himself, the UI path's auth redirect sends browsers to an address
+  unreachable from outside the tailnet — everything else works, but
+  real external login won't until this field is updated.
 
 ## NAS Docker
 - data-root: /volume1/docker (moved off UGOS's overlay-on-overlay root fs)
