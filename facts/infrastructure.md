@@ -45,9 +45,10 @@
 - Authentik 2024.8.3: auth.christianmancini.de
 - n8n 2.30.4 (auto-updated from 2.29.8 by the ADR-019 controller
   2026-07-14): on NAS, tailnet-only (http://100.126.31.47:5678), own
-  Postgres 16-alpine. VPS n8n (n8n-zuij) still running — not yet retired.
-  Also gated by an Authentik outpost at http://100.126.31.47:5679 (see
-  below). SMTP via Brevo (smtp-relay.brevo.com:587, separate SMTP key
+  Postgres 16-alpine. VPS n8n (n8n-zuij) **retired 2026-07-15** — see
+  "n8n-zuij retirement" below. Also gated by an Authentik outpost at
+  http://100.126.31.47:5679 (see below). SMTP via Brevo
+  (smtp-relay.brevo.com:587, separate SMTP key
   from Authentik's, sender mancinicn@gmail.com) — verified working
   2026-07-10. Tailscale ACL now scopes group:family to ports 8123/5679
   only on the NAS, so 5678 is effectively admin-only via the tailnet
@@ -118,6 +119,40 @@ discoverable at all from the VPS).
   correctly targets the public hostname (`.../outpost.goauthentik.io/
   start?rd=https%3A%2F%2Fn8n.christianmancini.de%2F`), not the tailnet
   IP. Public route is fully working end-to-end.
+
+## n8n-zuij retirement (2026-07-15)
+The legacy VPS n8n (project `n8n-zuij`, container `n8n-zuij-n8n-1`) is
+gone — container, its `n8n-zuij_n8n_data` volume, and the
+`n8n-zuij_default` network all removed. Not archived — Christian's
+explicit call ("delete all... can do again when needed") after seeing
+what was actually in it.
+
+**Why it wasn't just imported/archived**: audited its 8 workflows
+first (`n8n export:workflow --all`). Two weren't prefixed `TEMP` — "My
+workflow" (an MCP-exposed Notion search tool, inactive, looked benign)
+and **"My workflow 2", which was ACTIVE** and genuinely concerning: an
+unauthenticated webhook trigger wired directly to an SSH-command node
+(stored "SSH Password account" credential) that, on any POST, would
+SSH into a remote host and ensure a persistent `tmux` session literally
+named `hermes` exists there (`tmux new-session -d -s hermes ...`) —
+functionally a standing, webhook-triggerable backdoor/shell, not
+something to bring into the canonical instance without understanding
+its origin first. The workflow definition (not the credential secret
+itself — n8n exports don't include those) is preserved in the
+already-delivered export file if this ever needs investigating; the
+live instance holding it is gone.
+
+The other 6 `TEMP`-prefixed workflows (3x "Rolodex Postgres Bootstrap",
+3x "Hermes SQL Runner pg_datahub_prod") were dropped without import —
+looked like disposable scaffolding, not reviewed in depth beyond that.
+
+Also removed with it: the `credentials-export.json` plaintext
+credentials dump that had been sitting in its data volume since Oct
+2025 (flagged earlier in the day, never opened by an agent).
+
+One untouched leftover: `/docker/n8n-zuij/` on the VPS (just the old
+compose file + backups, root-owned, no real data) — couldn't remove
+without sudo, low priority, Christian's call whenever.
 
 ## NAS Docker
 - data-root: /volume1/docker (moved off UGOS's overlay-on-overlay root fs)
