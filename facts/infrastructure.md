@@ -57,6 +57,21 @@
   controller 2026-07-14): on NAS, host network
   (http://100.126.31.47:8123 + LAN), native auth, config at
   /volume1/appdata/homeassistant
+- **Immich v3.0.3 (installed 2026-07-16, ADR-020)**: on NAS, tailnet-only
+  (http://100.126.31.47:2283), native auth (like HA — mobile app needs
+  direct API access, not Authentik's proxy-outpost SSO flow). Four
+  containers: `immich-server`, `immich-machine-learning`,
+  `immich-redis` (upstream now uses Valkey, not Redis),
+  `immich-database` (Immich's own Postgres+vectorchord image, digest-
+  pinned upstream). Data at `/volume1/appdata/immich/{library,postgres,
+  model-cache}`. **Legacy `/volume1/Photos` import deliberately NOT
+  done** — fresh install, per-user accounts add their own photos going
+  forward; import model is a separate future decision. Wired into
+  ops-gateway (all 4 containers for status/logs/restart, only
+  immich-server/immich-machine-learning for pull_image — see ADR-020
+  "Consequences" for why), the auto-update controller (one `immich`
+  row, both app containers recreated together), and appdata backup
+  (pg_dump + library, model-cache excluded — see ADR-020).
 
 ## Authentik outpost (n8n family gate)
 - Outpost object: `n8n-outpost-standalone` (pk 58496339-3660-4e26-8c2d-4d7fc7ee358d)

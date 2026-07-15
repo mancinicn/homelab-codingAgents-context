@@ -85,17 +85,28 @@ not something that happens silently.
 | Traefik | v3.2.0 | 80/443 public, Cloudflare DNS challenge TLS |
 | Vaultwarden | 1.36.0 | vault.christianmancini.de — master pw RESET + upgraded 1.32.7→1.36.0 2026-07-13, see ADR-016/017 |
 | Authentik | 2024.8.3 | auth.christianmancini.de |
-| n8n (n8n-zuij) | legacy | tailnet-only — still running, retirement deliberately deferred, not scheduled |
 | backup-gateway | rclone/rclone:1.74.4 | tailnet-only 100.94.111.98:8200, append-only B2 relay |
+| backup-gateway-vps | rclone/rclone:1.74.4 | localhost-only 8201, VPS self-backup (ADR-017) |
+
+n8n-zuij (legacy VPS n8n) **retired 2026-07-15** — audit found an
+active, unauthenticated-webhook-to-SSH-backdoor workflow inside it;
+deleted entirely (container/volume/network), not archived, Christian's
+explicit call. `n8n.christianmancini.de` now routes through Traefik
+(file provider, first cross-host route) to the canonical NAS n8n
+below — Authentik-gated UI via the existing family outpost, webhook
+paths bypass auth. `universal-capture` (a separate, untracked, pre-
+rebuild legacy stack squatting the same hostname, found crash-looping)
+also decommissioned the same day.
 
 ### NAS
 | Service | Image | Access |
 |---|---|---|
-| n8n | 2.29.8 | tailnet 100.126.31.47:5678 (raw) + :5679 (Authentik-gated) |
+| n8n | 2.30.4 | tailnet 100.126.31.47:5678 (raw) + :5679 (Authentik-gated) + public via VPS Traefik |
 | n8n-postgres | postgres:16-alpine | internal |
-| Home Assistant | 2026.7.1 | LAN + tailnet :8123, host network, native auth |
+| Home Assistant | 2026.7.2 | LAN + tailnet :8123, host network, native auth |
 | n8n-outpost + redis | goauthentik/proxy:2024.8.3 | gates n8n via Authentik, family group |
 | ops-gateway + docker-socket-proxy | custom / tecnativa v0.4.2 | tailnet 100.126.31.47:8300 |
+| Immich (server/ml/redis/database) | v3.0.3 | tailnet 100.126.31.47:2283, native auth (ADR-020) — import of legacy /volume1/Photos deliberately deferred |
 
 ## Ops gateway (Phase 6/7/8) — what Claude can actually do right now
 
@@ -198,32 +209,25 @@ read-only) → 7 v1 (restart_service, pull_image) → Telegram approval
 flow (built ahead of schedule) → 8 (destructive actions: remove_container,
 remove_volume, prune, reboot — verified end-to-end including a real
 NAS reboot) → VPS self-backup + Vaultwarden 1.36.0 (ADR-017) → Phase 7
-remainder deploy_from_repo (ADR-018).
+remainder deploy_from_repo (ADR-018) → auto-update controller v1
+(ADR-019) → n8n-zuij retired (2026-07-15) → public n8n route
+(n8n.christianmancini.de, 2026-07-15) → **Phase 9: Immich installed,
+import deferred (2026-07-16, ADR-020)**.
 
 ## Remaining phases
 
-- **Phase 7 remainder — DONE** (2026-07-13, ADR-018): `deploy_from_repo`
-  built + verified (see ops-gateway section above)
-- **Auto-update controller — BUILT** (2026-07-14, ADR-019): weekly
-  root systemd timer on the NAS auto-updates n8n + Home Assistant
-  within their major line, health-checks each, auto-rolls-back on
-  failure. Rollback proven on a live service. Version state in each
-  compose dir's git-tracked ./.env. Config-driven (add a service =
-  one row + parameterized image + health check). v1 excludes
-  DBs/outpost/VPS; never auto-crosses a major. Known gap: git-drift
-  (staged .env vs repo, reconciled manually until git-on-NAS v2).
-  Next natural extensions: add more services; extend to the VPS.
 - **Phase 8 follow-up**: root cause found for the reboot-survival
   issue (UGOS index_serv bug, see "Known issues" above and ADR-014),
   but the UI fix path is blocked — UGOS's "Create Shared Folder" can't
   adopt an existing directory, only create new ones, and no exclusion-
   only setting was found. Decision: accept the proven "recreate every
   container after any reboot" mitigation for now, revisit the real fix
-  later (likely via UGREEN support directly). The separate Authentik/
-  Traefik 504 found during this investigation, and the untracked
-  /opt/vps-infra/ gap it surfaced, were both resolved the same
-  session — see ADR-015
-- **Phase 9**: Immich + vault permissions
+  later (likely via UGREEN support directly).
+- **Phase 9 follow-up (not done, not scheduled)**: legacy
+  `/volume1/Photos` import into Immich — external library vs.
+  managed-store, which folder(s), excluding non-photo content. Own
+  future decision, see ADR-020. Vault permissions / locking agent_ops
+  out of photo paths applies once that's actually chosen.
 - **Phase 10**: agentic layer (Hermes goes live)
 
 ## Key decisions (ADRs 001–013, full text in `decisions/`)
