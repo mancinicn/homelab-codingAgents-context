@@ -64,9 +64,9 @@
   initially (see decisions/009), its provider binding has been removed,
   leave it alone going forward.
 - Provider: `n8n-family` (Proxy mode, internal host http://n8n:5678,
-  external host http://100.126.31.47:5679 — **needs updating to
-  https://n8n.christianmancini.de**, see "Public n8n route" below;
-  not yet done)
+  external host `https://n8n.christianmancini.de` — updated 2026-07-15,
+  see "Public n8n route" below; was `http://100.126.31.47:5679`
+  tailnet-only before that)
 - Application: `n8n (Family)` (slug n8n-family), policy_engine_mode
   "any", bound to groups `family` and `authentik Admins`
 - Outpost containers on NAS: `n8n-outpost` + `n8n-outpost-redis`
@@ -112,12 +112,12 @@ discoverable at all from the VPS).
   redirect); UI path redirects to the Authentik outpost; TLS cert
   issued cleanly (`cf` resolver); Vaultwarden/Authentik still healthy
   after the Traefik recreates.
-- **NOT yet done**: the `n8n-family` Authentik provider's External host
-  still says `http://100.126.31.47:5679` (tailnet-only) instead of
-  `https://n8n.christianmancini.de`. Until Christian makes that one-field
-  edit himself, the UI path's auth redirect sends browsers to an address
-  unreachable from outside the tailnet — everything else works, but
-  real external login won't until this field is updated.
+- **DONE 2026-07-15**: Christian updated the `n8n-family` provider's
+  External host to `https://n8n.christianmancini.de` himself via the
+  Authentik admin UI. Verified — the outpost's login redirect now
+  correctly targets the public hostname (`.../outpost.goauthentik.io/
+  start?rd=https%3A%2F%2Fn8n.christianmancini.de%2F`), not the tailnet
+  IP. Public route is fully working end-to-end.
 
 ## NAS Docker
 - data-root: /volume1/docker (moved off UGOS's overlay-on-overlay root fs)
