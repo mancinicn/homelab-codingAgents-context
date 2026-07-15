@@ -1,16 +1,16 @@
 ## NAS containers
 NAMES                      IMAGE                                            STATUS
-homeassistant              ghcr.io/home-assistant/home-assistant:2026.7.2   Up 2 minutes
-n8n                        docker.n8n.io/n8nio/n8n:2.30.4                   Up 5 minutes
-n8n-outpost-redis          redis:7-alpine                                   Up 20 hours
-ops-gateway                ops-gateway:1.5                                  Up 21 hours (healthy)
-n8n-postgres               postgres:16-alpine                               Up 47 hours (healthy)
+homeassistant              ghcr.io/home-assistant/home-assistant:2026.7.2   Up 10 hours
+n8n                        docker.n8n.io/n8nio/n8n:2.30.4                   Up 10 hours
+n8n-outpost-redis          redis:7-alpine                                   Up 30 hours
+ops-gateway                ops-gateway:1.5                                  Up 31 hours (healthy)
+n8n-postgres               postgres:16-alpine                               Up 2 days (healthy)
 n8n-outpost                ghcr.io/goauthentik/proxy:2024.8.3               Up 2 days (healthy)
 ops-gateway-docker-proxy   tecnativa/docker-socket-proxy:v0.4.2             Up 2 days
 
 ## NAS disk
 Filesystem                                      Size  Used Avail Use% Mounted on
-/dev/mapper/ug_B584AF_1766063350_pool1-volume1  3.7T  182G  3.5T   5% /volume1
+/dev/mapper/ug_B584AF_1766063350_pool1-volume1  3.7T  183G  3.5T   5% /volume1
 
 ## NAS docker networks
 NETWORK ID     NAME                               DRIVER    SCOPE
@@ -26,5 +26,5 @@ afbc1ea27eed   ops-gateway_ops-gateway-internal   bridge    local
 ● restic-photos-backup.timer - Daily Restic photo backup
      Loaded: loaded (/etc/systemd/system/restic-photos-backup.timer; enabled; preset: enabled)
      Active: active (waiting) since Sun 2026-07-12 14:11:12 CEST; 2 days ago
-    Trigger: Wed 2026-07-15 03:21:45 CEST; 7h left
+    Trigger: Thu 2026-07-16 03:17:03 CEST; 21h left
    Triggers: ● restic-photos-backup.service

@@ -1,11 +1,11 @@
 ## VPS containers
 NAMES                  IMAGE                                 STATUS
-vaultwarden            vaultwarden/server:1.36.0             Up 21 hours (healthy)
-backup-gateway         rclone/rclone:1.74.4                  Up 21 hours
-backup-gateway-vps     rclone/rclone:1.74.4                  Up 21 hours
-n8n                    docker.n8n.io/n8nio/n8n:latest        Restarting (1) 42 seconds ago
-postgres               postgres:16-alpine                    Up 41 hours
-redis                  redis:alpine                          Up 41 hours
+vaultwarden            vaultwarden/server:1.36.0             Up 31 hours (healthy)
+backup-gateway         rclone/rclone:1.74.4                  Up 31 hours
+backup-gateway-vps     rclone/rclone:1.74.4                  Up 31 hours
+n8n                    docker.n8n.io/n8nio/n8n:latest        Restarting (1) 51 seconds ago
+postgres               postgres:16-alpine                    Up 2 days
+redis                  redis:alpine                          Up 2 days
 traefik                traefik:v3.2.0                        Up 2 days
 authentik-server       ghcr.io/goauthentik/server:2024.8.3   Up 2 days (healthy)
 authentik-postgresql   postgres:16-alpine                    Up 2 days (healthy)

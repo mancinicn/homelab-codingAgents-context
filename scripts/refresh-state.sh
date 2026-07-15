@@ -12,8 +12,20 @@
 # Fail-safe: writes to a temp dir first; a state file is only replaced
 # when the new snapshot is non-empty. A failed refresh preserves the
 # previous good snapshot and exits non-zero.
+#
+# Windows laptop quirk: Git Bash's MSYS ssh can't authenticate against
+# the Windows ssh-agent named pipe for the VPS (plain pubkey auth) —
+# only NAS works over plain ssh, since that's Tailscale SSH auth
+# instead. Use the native Windows OpenSSH client for the VPS leg there.
 
 set -Eeuo pipefail
+
+if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]] \
+  && [ -x /c/Windows/System32/OpenSSH/ssh.exe ]; then
+  SSH_VPS=(/c/Windows/System32/OpenSSH/ssh.exe)
+else
+  SSH_VPS=(ssh)
+fi
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STATE_DIR="$REPO_DIR/state"
@@ -42,7 +54,7 @@ if [ -d /opt/vps-infra ]; then
   # running on the VPS itself
   vps_snapshot > "$TMP_DIR/vps.md" || FAILED=1
 else
-  ssh vps "$(declare -f vps_snapshot); vps_snapshot" > "$TMP_DIR/vps.md" || FAILED=1
+  "${SSH_VPS[@]}" vps "$(declare -f vps_snapshot); vps_snapshot" > "$TMP_DIR/vps.md" || FAILED=1
 fi
 
 # --- NAS (as agent_ops, sudo allowlist only) --------------------------------
