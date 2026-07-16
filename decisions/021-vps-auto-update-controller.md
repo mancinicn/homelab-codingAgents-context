@@ -69,3 +69,29 @@ already used everywhere else (n8n, Home Assistant, Immich).
   version jump across several minor releases — recommend a `--dry-run`
   first, and ideally watching the first real run rather than trusting
   it silently.
+
+## Two real bugs found deploying this, both fixed same-day
+The first live `--dry-run` on the VPS caught a genuine bug: Traefik
+showed `best_auto=none` despite `v3.7.8` genuinely existing. Root
+cause: `discover()`'s python compared the stored current-version
+against candidate tags, but only candidates got their `PREFIX`
+stripped before parsing — the current-version string didn't. Worked by
+coincidence for every prior service (their stored `.env` values never
+happened to include their own `PREFIX`); Traefik is the first service
+where the real docker tag and the GitHub release-tag prefix are the
+same string (`v`), so it's the first to actually collide. Fixed by
+normalizing both sides identically before comparison.
+
+Fixing that surfaced a second, related bug on the write side:
+`BEST_AUTO` is always the bare stripped version, but writing it back
+as the new `.env` value would have produced `TRAEFIK_VERSION=3.7.8` —
+missing the `v` its actual docker tag requires. Caught in dry-run
+output before any real update attempt. Also affects **Immich**
+(`IMMICH_VERSION=v3.0.3` — same "docker tag needs the same prefix its
+release tag has" situation), fixed there too before it ever mattered,
+not after. New `IMGPFX` map (separate from `PREFIX`, which is only
+about GitHub tag matching — the two don't always coincide) reconstructs
+the correct value on write. Both bugs fixed in both
+`nas/scripts/image-autoupdate.sh` and `vps/scripts/image-autoupdate.sh`
+the same session; re-verified with dry-runs on both boxes afterward,
+no regressions on n8n/HA/Vaultwarden/Authentik.
