@@ -263,7 +263,22 @@ without sudo, low priority, Christian's call whenever.
 - Weekly root systemd timer on the NAS (image-autoupdate.timer, Sun
   05:00 after backups) → /usr/local/bin/image-autoupdate.sh. Auto-
   updates managed services within their major line, health-checks each,
-  AUTO-ROLLS-BACK on failure. v1 manages n8n + Home Assistant only.
+  AUTO-ROLLS-BACK on failure. NAS: n8n, Home Assistant, Immich
+  (v3.0.3, added 2026-07-16, ADR-020).
+- **Extended to the VPS 2026-07-16 (ADR-021)**: separate instance
+  (vps/scripts/image-autoupdate.sh, own timer Sun 05:15 after the VPS's
+  04:30 backup) managing Traefik, Authentik, Vaultwarden — same
+  design, no cross-box control. Authentik is ~2 years behind
+  (2024.8.3 vs. latest 2026.5.5) but that's a calendar-major gap, so
+  it's notify-only, never auto-applied — a real gap worth a deliberate
+  manual upgrade sometime, not an auto-updater job.
+- **Two real bugs found + fixed the same day** (see ADR-021 for full
+  detail): a version-comparison bug that silently broke discovery for
+  any service whose real docker tag needs the same prefix as its
+  GitHub release tag (Traefik), and a related write-side bug that
+  would have written an invalid tag missing that prefix (also affects
+  Immich, caught before it ever mattered). Fixed in both the NAS and
+  VPS copies of the script.
 - Running version lives in each compose dir's ./.env (N8N_VERSION,
   HA_VERSION) — git-tracked (narrow .gitignore exceptions; version-only,
   no secrets). The compose image line reads ${VAR}; compose auto-reads
