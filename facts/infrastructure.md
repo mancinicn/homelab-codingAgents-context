@@ -296,7 +296,43 @@ without sudo, low priority, Christian's call whenever.
 
 ## LLM access
 - Interactive: Claude Code + OpenAI Codex (subscriptions)
-- Autonomous: DeepSeek API (cheap, OpenAI-compatible)
+- Autonomous: DeepSeek API (cheap, OpenAI-compatible) — Christian only
+  has a ChatGPT subscription, not separately-billed OpenAI API access,
+  so DeepSeek stays primary for Hermes (ADR-022 revisited this and
+  kept ADR-001's original choice)
+
+## Hermes (Phase 10 first slice — Watchdog, ADR-006/007/022, 2026-07-16)
+- `nas/agents/hermes/` — FastAPI, `core-net` only, **zero host port**
+  (stricter than every other service here — only n8n reaches it, via
+  Docker's internal DNS `http://hermes:8400`). No auth on
+  `/watchdog/run`: network topology is the boundary, matching
+  `n8n-outpost-redis`'s precedent.
+- Zero standing capability: no docker socket, no SSH key, no sudo.
+  Uses the `svc-hermes` ops-gateway token (provisioned since Phase 6,
+  unused until now) against the same audited endpoints `svc-claude`
+  uses — `restart_service` isn't approval-gated in the gateway's own
+  design, so this is the SAME authority already decided safe, not a
+  new grant.
+- Playbook: checks a hardcoded managed-service list (same set as
+  ops-gateway's `ALLOWED_SERVICES`) via `service_status`; if unhealthy
+  (`status != running` or `restart_count > 2`), asks DeepSeek which one
+  to restart — then **independently re-verifies the same rule against
+  the real data** before calling `restart_service`. Model's claim never
+  trusted alone. Reports via the shared Telegram bot.
+- Registered in ops-gateway's `ALLOWED_SERVICES` only (diagnostics) —
+  not `DEPLOYABLE_SERVICES`/`SERVICE_IMAGES` (custom local code, same
+  exclusion reasoning as ops-gateway itself). Not in the auto-updater
+  (no upstream releases) or backup (stateless).
+- n8n wiring: `nas/agents/hermes/n8n-watchdog-workflow.json` (Schedule
+  Trigger every 20 min → HTTP POST), imports **inactive** — Christian
+  activates after a reviewed test run.
+- Secrets: `/etc/nas-secrets/hermes.env` (`DEEPSEEK_API_KEY`,
+  `TOKEN_SVC_HERMES`) via `nas/scripts/save-hermes-secrets.sh`.
+- **Status as of 2026-07-16: built, staged, not yet running.** Blocked
+  on Christian providing his DeepSeek key + pulling the `svc-hermes`
+  token from Vaultwarden — no rush.
+- Known v1 gap: no escalation if the same service needs restarting run
+  after run (just keeps following the rule) — v2 territory.
 
 ## Backup
 - restic → Backblaze B2, bucket ugreen-restic-62fdead3d97f, THROUGH the
