@@ -301,38 +301,67 @@ without sudo, low priority, Christian's call whenever.
   so DeepSeek stays primary for Hermes (ADR-022 revisited this and
   kept ADR-001's original choice)
 
-## Hermes (Phase 10 first slice — Watchdog, ADR-006/007/022, 2026-07-16)
-- `nas/agents/hermes/` — FastAPI, `core-net` only, **zero host port**
-  (stricter than every other service here — only n8n reaches it, via
-  Docker's internal DNS `http://hermes:8400`). No auth on
-  `/watchdog/run`: network topology is the boundary, matching
-  `n8n-outpost-redis`'s precedent.
-- Zero standing capability: no docker socket, no SSH key, no sudo.
-  Uses the `svc-hermes` ops-gateway token (provisioned since Phase 6,
-  unused until now) against the same audited endpoints `svc-claude`
+## Hermes (Phase 10 — ADR-006/007/022/023)
+`nas/agents/hermes/` — FastAPI, `core-net` only, **zero host port**
+(stricter than every other service here). Zero standing capability: no
+docker socket, no SSH key, no sudo. `image: hermes:1.1`.
+
+### Watchdog (v1, ADR-022) — RUNNING as of 2026-07-16
+- Only n8n reaches `/watchdog/run`, via Docker's internal DNS
+  (`http://hermes:8400`). No auth of its own — network topology is the
+  boundary, matching `n8n-outpost-redis`'s precedent.
+- Uses the `svc-hermes` ops-gateway token (provisioned since Phase 6,
+  unused until this) against the same audited endpoints `svc-claude`
   uses — `restart_service` isn't approval-gated in the gateway's own
-  design, so this is the SAME authority already decided safe, not a
-  new grant.
+  design, so this is the SAME authority already decided safe.
 - Playbook: checks a hardcoded managed-service list (same set as
   ops-gateway's `ALLOWED_SERVICES`) via `service_status`; if unhealthy
   (`status != running` or `restart_count > 2`), asks DeepSeek which one
   to restart — then **independently re-verifies the same rule against
   the real data** before calling `restart_service`. Model's claim never
-  trusted alone. Reports via the shared Telegram bot.
-- Registered in ops-gateway's `ALLOWED_SERVICES` only (diagnostics) —
-  not `DEPLOYABLE_SERVICES`/`SERVICE_IMAGES` (custom local code, same
-  exclusion reasoning as ops-gateway itself). Not in the auto-updater
-  (no upstream releases) or backup (stateless).
+  trusted alone.
+- **Silent when healthy, deliberately** (fixed after the first real
+  test run — Christian's feedback, a "still fine" message every 20 min
+  is noise not signal). Only notifies (shared `notify.env` bot) on an
+  unhealthy finding or an action taken.
 - n8n wiring: `nas/agents/hermes/n8n-watchdog-workflow.json` (Schedule
-  Trigger every 20 min → HTTP POST), imports **inactive** — Christian
-  activates after a reviewed test run.
-- Secrets: `/etc/nas-secrets/hermes.env` (`DEEPSEEK_API_KEY`,
-  `TOKEN_SVC_HERMES`) via `nas/scripts/save-hermes-secrets.sh`.
-- **Status as of 2026-07-16: built, staged, not yet running.** Blocked
-  on Christian providing his DeepSeek key + pulling the `svc-hermes`
-  token from Vaultwarden — no rush.
+  Trigger every 20 min → HTTP POST), imported and **verified working**
+  via a manual test execution. Not yet switched to active/scheduled —
+  Christian's call when ready.
 - Known v1 gap: no escalation if the same service needs restarting run
   after run (just keeps following the rule) — v2 territory.
+
+### Chat + Home Assistant (v1.1, ADR-023) — built, not yet activated
+- **Separate Telegram bot** from the Watchdog's shared `notify.env`
+  one, deliberately — a chat bot accepts arbitrary free text fed to an
+  LLM that can propose real actions, a bigger attack surface than the
+  notify bot's narrow alert+button job. `HERMES_CHAT_BOT_TOKEN` +
+  `HERMES_CHAT_CHAT_ID` in `hermes.env`.
+- Reads (status/HA state questions) answer immediately. Writes
+  (`restart_service`, HA `service_call`) always go through an
+  in-Hermes approval flow — Approve/Deny **buttons**, never a free-text
+  reply, same reasoning ops-gateway's own approval flow already uses
+  buttons for. Not reused from ops-gateway's `/request_approval` (that
+  endpoint is scoped to ops-gateway's own actions; Hermes now gates two
+  different domains — infra AND HA — ops-gateway knows nothing about
+  the second one).
+- HA access via `HA_TOKEN`, from a **dedicated restricted (non-admin)
+  HA user** Christian creates himself — verified before building this
+  that HA's long-lived tokens have **no built-in scoping** (open
+  community feature request, unresolved) — a token always carries the
+  full permission of whatever account created it, so a restricted
+  account is the only lever. Reached at `http://100.126.31.47:8123`
+  (HA uses `network_mode: host`, not `core-net`).
+- **Automation/dashboard authoring explicitly NOT included** — verified
+  the HA REST API has no endpoints for it at all (every endpoint is
+  state/service/history/calendar). Would need live filesystem writes
+  to HA's config (a bad file can break HA's config loading) or HA's
+  undocumented internal WebSocket API — its own future increment.
+- Setup still needed before this runs for real: Christian creates the
+  new Telegram bot + messages it once (chat_id), creates the restricted
+  HA user + generates its token, re-runs
+  `nas/scripts/save-hermes-secrets.sh` (now prompts for all five
+  values, auto-detects the chat_id from the bot's own `getUpdates`).
 
 ## Backup
 - restic → Backblaze B2, bucket ugreen-restic-62fdead3d97f, THROUGH the
