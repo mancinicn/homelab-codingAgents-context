@@ -331,12 +331,34 @@ docker socket, no SSH key, no sudo. `image: hermes:1.1`.
 - Known v1 gap: no escalation if the same service needs restarting run
   after run (just keeps following the rule) — v2 territory.
 
-### Chat + Home Assistant (v1.1, ADR-023) — built, not yet activated
+### Chat + Home Assistant (v1.1, ADR-023) — chat interface RUNNING as of 2026-07-17
 - **Separate Telegram bot** from the Watchdog's shared `notify.env`
   one, deliberately — a chat bot accepts arbitrary free text fed to an
   LLM that can propose real actions, a bigger attack surface than the
   notify bot's narrow alert+button job. `HERMES_CHAT_BOT_TOKEN` +
   `HERMES_CHAT_CHAT_ID` in `hermes.env`.
+- **Bot assignment, finalized 2026-07-17**: `hermes.env`'s
+  `HERMES_CHAT_BOT_TOKEN` → **Hermes_mancibot** (chat); `notify.env`'s
+  `TELEGRAM_TOKEN` → **NAS_mancibot** (Watchdog alerts, ops-gateway
+  approvals, backup/updater failure alerts — everything unattended/
+  shared). Both confirmed via real end-to-end test messages, not just
+  `getMe` validation. `HERMES_CHAT_CHAT_ID` = Christian's own Telegram
+  user id `8377625837` — a private 1:1 chat's id IS the user's own id,
+  same number regardless of which bot.
+- **Two real operational gotchas found getting here, both now handled
+  by scripts** (`nas/scripts/save-hermes-secrets.sh`, `update-notify-
+  bot-token.sh`): (1) this terminal corrupts long strings pasted under
+  `read -s` (hidden input) specifically — the identical token pasted
+  *visibly* works every time. Scripts now validate against Telegram's
+  `getMe` and auto-retry with a visible prompt on failure, rather than
+  requiring manual workaround each time. (2) `docker compose up -d`
+  does **not** reliably recreate a container on a pure `env_file`
+  *content* change alone (the file path in the compose config didn't
+  change, so compose saw nothing to do) — confirmed via unchanged
+  `StartedAt` timestamps. Needs `--force-recreate` when only secret
+  *values* changed, not the compose file itself. A cousin of the
+  already-documented "`docker restart` doesn't re-read env_file"
+  gotcha below, but catching `up -d` too.
 - Reads (status/HA state questions) answer immediately. Writes
   (`restart_service`, HA `service_call`) always go through an
   in-Hermes approval flow — Approve/Deny **buttons**, never a free-text
@@ -357,11 +379,13 @@ docker socket, no SSH key, no sudo. `image: hermes:1.1`.
   state/service/history/calendar). Would need live filesystem writes
   to HA's config (a bad file can break HA's config loading) or HA's
   undocumented internal WebSocket API — its own future increment.
-- Setup still needed before this runs for real: Christian creates the
-  new Telegram bot + messages it once (chat_id), creates the restricted
-  HA user + generates its token, re-runs
-  `nas/scripts/save-hermes-secrets.sh` (now prompts for all five
-  values, auto-detects the chat_id from the bot's own `getUpdates`).
+- **Chat interface verified working end-to-end** 2026-07-17 (startup
+  greeting + real approval-flow test messages, both confirmed received
+  on the correct bot). **HA piece still not configured** — Christian
+  hasn't yet created the restricted HA user + token; chat/Watchdog both
+  work fully without it, HA questions will just no-op until `HA_TOKEN`
+  is set via `nas/scripts/save-hermes-secrets.sh` (idempotent — re-run
+  anytime to add just that one value, existing ones untouched).
 
 ## Backup
 - restic → Backblaze B2, bucket ugreen-restic-62fdead3d97f, THROUGH the
@@ -418,3 +442,13 @@ Cost ~45 minutes of debugging on 2026-07-10 (see decisions/009)
 because a token rotation kept appearing to fail when the container
 was simply never seeing the new value. Applies to any service here
 using env_file for secrets (n8n, HA if ever needed, the outpost).
+
+**Extended finding (2026-07-17, Hermes bot-swap troubleshooting)**:
+even plain `docker compose up -d` isn't always enough. If NOTHING in
+the compose file itself changed (same `env_file:` path, same image,
+same everything Compose hashes) and only the *external file's content*
+changed, Compose can decide there's nothing to do and leave the old
+container running untouched — confirmed via an unchanged `StartedAt`
+timestamp after a supposedly-successful `up -d`. Use
+`docker compose up -d --force-recreate` whenever ONLY secret values
+changed (not the compose file), to be certain.
