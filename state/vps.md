@@ -1,17 +1,13 @@
 ## VPS containers
 NAMES                  IMAGE                                 STATUS
-vaultwarden            vaultwarden/server:1.36.0             Up 31 hours (healthy)
-backup-gateway         rclone/rclone:1.74.4                  Up 31 hours
-backup-gateway-vps     rclone/rclone:1.74.4                  Up 31 hours
-n8n                    docker.n8n.io/n8nio/n8n:latest        Restarting (1) 51 seconds ago
-postgres               postgres:16-alpine                    Up 2 days
-redis                  redis:alpine                          Up 2 days
-traefik                traefik:v3.2.0                        Up 2 days
-authentik-server       ghcr.io/goauthentik/server:2024.8.3   Up 2 days (healthy)
-authentik-postgresql   postgres:16-alpine                    Up 2 days (healthy)
-authentik-worker       ghcr.io/goauthentik/server:2024.8.3   Up 7 days (healthy)
-authentik-redis        redis:7-alpine                        Up 7 days (healthy)
-n8n-zuij-n8n-1         aaabdbd46cae                          Up 8 days
+authentik-server       ghcr.io/goauthentik/server:2026.5.5   Up 2 minutes (healthy)
+authentik-worker       ghcr.io/goauthentik/server:2026.5.5   Up 2 minutes (healthy)
+traefik                traefik:v3.2.0                        Up 30 hours
+vaultwarden            vaultwarden/server:1.36.0             Up 4 days (healthy)
+backup-gateway         rclone/rclone:1.74.4                  Up 4 days
+backup-gateway-vps     rclone/rclone:1.74.4                  Up 4 days
+authentik-postgresql   postgres:16-alpine                    Up 5 days (healthy)
+authentik-redis        redis:7-alpine                        Up 10 days (healthy)
 
 ## VPS disk
 Filesystem      Size  Used Avail Use% Mounted on
@@ -22,7 +18,6 @@ udp   UNCONN 0      0                       127.0.0.54:53         0.0.0.0:*
 udp   UNCONN 0      0                    127.0.0.53%lo:53         0.0.0.0:*          
 udp   UNCONN 0      0                          0.0.0.0:41641      0.0.0.0:*          
 tcp   LISTEN 0      4096                 100.94.111.98:8200       0.0.0.0:*          
-tcp   LISTEN 0      4096                 100.94.111.98:32781      0.0.0.0:*          
 tcp   LISTEN 0      4096                       0.0.0.0:80         0.0.0.0:*          
 tcp   LISTEN 0      4096                       0.0.0.0:22         0.0.0.0:*          
 tcp   LISTEN 0      4096                       0.0.0.0:443        0.0.0.0:*          
@@ -41,8 +36,6 @@ bridge
 host
 identity_authentik-internal
 identity_default
-n8n-zuij_default
 none
 proxy
 tools_default
-universal-capture_brain_net
