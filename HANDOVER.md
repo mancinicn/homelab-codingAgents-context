@@ -228,7 +228,7 @@ import deferred (2026-07-16, ADR-020)**.
   managed-store, which folder(s), excluding non-photo content. Own
   future decision, see ADR-020. Vault permissions / locking agent_ops
   out of photo paths applies once that's actually chosen.
-- **Phase 10**: agentic layer (Hermes goes live)
+- **Phase 10**: agentic layer (Hermes goes live) -- Watchdog now LIVE (workflow BQbSkEowSNJIU4JN active, 72 runs/24h verified 2026-07-26, session 15)
 
 ## Key decisions (ADRs 001–013, full text in `decisions/`)
 

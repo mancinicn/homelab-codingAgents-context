@@ -306,7 +306,7 @@ without sudo, low priority, Christian's call whenever.
 (stricter than every other service here). Zero standing capability: no
 docker socket, no SSH key, no sudo. `image: hermes:1.1`.
 
-### Watchdog (v1, ADR-022) — RUNNING as of 2026-07-16
+### Watchdog (v1, ADR-022) — LIVE + SCHEDULED (verified 2026-07-26)
 - Only n8n reaches `/watchdog/run`, via Docker's internal DNS
   (`http://hermes:8400`). No auth of its own — network topology is the
   boundary, matching `n8n-outpost-redis`'s precedent.
@@ -327,7 +327,7 @@ docker socket, no SSH key, no sudo. `image: hermes:1.1`.
 - n8n wiring: `nas/agents/hermes/n8n-watchdog-workflow.json` (Schedule
   Trigger every 20 min → HTTP POST), imported and **verified working**
   via a manual test execution. Not yet switched to active/scheduled —
-  Christian's call when ready.
+  Christian's call when ready. UPDATE 2026-07-26: n8n workflow BQbSkEowSNJIU4JN is ACTIVE -- verified 72 watchdog/run hits in 24h, all healthy/silent as designed (session 15).
 - Known v1 gap: no escalation if the same service needs restarting run
   after run (just keeps following the rule) — v2 territory.
 

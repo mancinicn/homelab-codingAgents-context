@@ -1,7 +1,7 @@
 # ADR-022: Hermes v1 — Watchdog (Phase 10 first slice)
 
 ## Date: 2026-07-16
-## Status: accepted, built, not yet activated
+## Status: accepted, built, ACTIVATED (live + verified 2026-07-26; workflow BQbSkEowSNJIU4JN, 72 runs/24h all healthy; see session 15)
 
 ## Decision
 Build Hermes's first real capability — the Watchdog role from
